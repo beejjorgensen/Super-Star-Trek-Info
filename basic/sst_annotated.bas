@@ -16,21 +16,27 @@ REM G(x,y) galactic quadrant map, KBS values (Klingons Bases Stars)
 REM K3 the number of Klingons
 REM K7 ??? Gets initted to K9 after galaxy setup
 REM K9 total number of Klingons in galaxy???
-REM K(x,y) ??? klingon???
+REM K(3,3) ??? klingon???
 REM N(x) ???
 REM P ???
 REM P0 ???
-REM Q1 ??? initialized to rand [1,8], coordinates?
-REM Q2 ??? initialized to rand [1,8]
-REM S ???
+REM Q$ 2D string representing the sector, 8x3 spaces wide per row, 8x8x3 spaces
+REM Q1 Player current quadrant Y [1,8]
+REM Q2 Player current quadrant X [1,8]
+REM S Shield level
+REM S1 Player current sector Y [1,8]
+REM S2 Player current sector X [1,8]
 REM S3 number of stars
+REM S8 Temporary variable in subroutine 8670
 REM S9 ???
 REM T ???
 REM T0 Starting stardate
 REM T9 How many days to complete mission
 REM X$ Used for plural "S"
 REM X0$ Used for plural "IS"/"ARE"
-REM Z$ ????
+REM Z$ 25 spaces, used to build Q$
+REM Z1 Sector position Y temp variable in subroutine 8670
+REM Z2 Sector position X temp variable in subroutine 8670
 REM Z4 Y coordinate in the galactic map
 REM Z5 X coordinate in the galactic map
 REM Z(x,y) ??? Gets initted to 0
@@ -69,27 +75,41 @@ REM 8        POLLUX         SPICA
 REM     I   II  III IV  I   II  III IV
 
 REM BASIC help
-REM
-REM CLEAR: "Purpose: To set all numeric variables to zero, all string
-REM variables to null, and to close all open files; and, optionally, to
-REM set the end of memory and the amount of stack space"
-REM
-REM "Remarks: <expression1> is a memory location which, if specified,
-REM sets the highest location available for use by BASIC-80."
-REM
 REM https://ia800708.us.archive.org/8/items/BASIC-80_MBASIC_Reference_Manual/BASIC-80_MBASIC_Reference_Manual_text.pdf
+
+REM `CLEAR`: To set all numeric variables to zero, all string variables
+REM to null, and to close all open files; and, optionally, to set the
+REM end of memory and the amount of stack space.
 REM
-REM "RND Action: Returns a random number between 0 and 1. The same
-REM sequence of random numbers is generated each time the program is RUN
-REM unless the random number generator is reseeded (see RANDOMIZE,
-REM Section 2.53). However, X<0 always restarts the same sequence for
-REM any given X.
+REM Remarks: <expression1> is a memory location which, if specified,
+REM sets the highest location available for use by BASIC-80.
+
+REM `RND`: Returns a random number between 0 and 1. The same sequence of
+REM random numbers is generated each time the program is RUN unless the
+REM random number generator is reseeded (see RANDOMIZE, Section 2.53).
+REM However, X<0 always restarts the same sequence for any given X.
 REM
-REM "X>0 or X omitted generates the next random number in the sequence.
-REM X=0 repeats the last number generated."
+REM X>0 or X omitted generates the next random number in the sequence.
+REM X=0 repeats the last number generated.
+
+REM `LEFT$(X$,I)`: Returns a string comprised of the leftmost I
+REM characters of X$. I must be in the range 0 to 255. If I is greater
+REM than LEN(X$), the entire string (X$) will be returned. If I=0, the
+REM null string (length zero) is returned.
+
+REM `STOP`: To terminate program execution and return to the command
+REM level.
 REM
-REM https://ia800708.us.archive.org/8/items/BASIC-80_MBASIC_Reference_Manual/BASIC-80_MBASIC_Reference_Manual_text.pdf
+REM STOP statements may be used anywhere in a program to terminate
+REM execution. When a STOP is encountered, the following message is
+REM printed:
 REM
+REM     Break in line nnnnn
+REM
+REM Unlike the END statement, the STOP statement does not close files.
+REM
+REM BASIC-80 always returns to the command level after a STOP is
+REM executed. Execution is resumed by issuing a CONT command.
 
 10 REM SUPER STARTREK - MAY 16,1978 - REQUIRES 24K MEMORY
 30 REM
@@ -127,6 +147,7 @@ REM "ORIGIONAL" [sic]
 
 260 CLEAR 600
 270 Z$="                         "
+
 330 DIM G(8,8),C(9,2),K(3,3),N(3),Z(8,8),D(8)
 
 REM Choose starting stardate (T) as a random integer between 120-140
@@ -139,11 +160,15 @@ REM and 35 (inclusive??).
 
 REM The following B9 is hard to read in the source. It could be E9, but
 REM is very likely not.
+REM
+REM S=0 Shields to zero
 
 440 P=10:P0=P:S9=200:S=0:B9=0:K9=0:X$="":X0$=" IS "
 470 DEF FND(D)=SQR((K(I,1)-S1)^2+(K(I,2)-S2)^2)
 475 DEF FNR(R)=INT(RND(R)*7.98+1.01)
 
+REM Player quadrant random X, Y 1..8
+REM Player sector random X, Y 1..8
 REM "ENTERPRIZE'S" [sic]
 
 480 REM INITIALIZE ENTERPRIZE'S POSITION
@@ -245,7 +270,100 @@ REM If this is not the first round, skip the first round output.
 1470 PRINT"IN THE GALACTIC QUADRANT, '";G2$;"'.":GOTO 1500
 1490 PRINT"NOW ENTERING ";G2$;" QUADRANT . . ."
 
+REM Extract number of Klingons in this quardrant to K3
+REM Extract number of starbases in this quardrant to B3
+
+1500 PRINT:K3=INT(G(Q1,Q2)*.01):B3=INT(G(Q1,Q2)*.1)-10*K3
+
+REM Extract number of stars in this quardrant to S3
+REM If no Klingons, skip combat message.
+
+1540 S3=G(Q1,Q2)-100*K3-10*B3:IFK3=0THEN1590
+
+1560 PRINT"COMBAT AREA      CONDITION RED":IFS>200THEN1590
+1580 PRINT"   SHIELDS DANGEROUSLY LOW"
+
+REM Initialize 3x3 K()??? grid to all zero
+REM Initialize Q$ to 192 spaces (8x8x3)
+
+1590 FORI=1TO3:K(I,1)=0:K(I,2)=0:NEXTI
+1600 FORI=1TO3:K(I,3)=0:NEXTI:Q$=Z$+Z$+Z$+Z$+Z$+Z$+Z$+LEFT$(Z$,17)
+
+1660 REM POSITION ENTERPRISE IN QUADRANT, THEN PLACE "K3" KLINGONS, &
+1670 REM "B3" STARBASES, & "S3" STARS ELSEWHERE.
+
+1680 A$="<*>":Z1=S1:Z2=S2:GOSUB8670:IFK3<1THEN1820
 
 
+REM Subtroutine: Insert a string in the quadrant string
+REM
+REM Inputs:
+REM
+REM Z2 = Sector position X
+REM Z1 = Sector position Y
+REM A$ = String to insert (must be 3 characters)
+REM Q$ = The string we're building
+REM
+REM Outputs:
+REM
+REM Q$ = The string we're building, 192 characters, 8x8x3
 
+8660 REM INSERT IN STRING ARRAY FOR QUADRANT
 
+REM Compute the position to insert in the string
+
+8670 S8=INT(Z2-.5)*3+INT(Z1-.5)*24+1
+
+8675 IF LEN(A$)<>3THEN PRINT"ERROR":STOP
+
+REM Insert at the left, right, or middle
+
+8680 IFS8=1THENQ$=A$+RIGHT$(Q$,189):RETURN
+8690 IFS8=190THENQ$=LEFT$(Q$,189)+A$:RETURN
+8700 Q$=LEFT$(Q$,S8-1)+A$+RIGHT$(Q$,190-S8):RETURN
+
+REM Subroutine: Get Quadrant Name
+REM
+REM Inputs:
+REM
+REM Z4 = Y coordinate in the galactic map
+REM Z5 = X coordinate in the galactic map
+REM G5 = Set to 1 to get the region name only (no Roman numerals)
+REM
+REM Outputs:
+REM
+REM G2$ = The name of the quadrant
+
+9010 REM QUADRANT NAME IN G2$ FROM Z4,Z5 (=Q1,Q2)
+9020 REM CALL WITH G5=1 TO GET REGION NAME ONLY
+9030 IFZ5<=4THENONZ4GOTO9040,9050,9060,9070,9080,9090,9100,9110
+9035 GOTO9120
+9040 G2$="ANTARES":GOTO9210
+9050 G2$="RIGEL":GOTO9210
+9060 G2$="PROCYON":GOTO9210
+9070 G2$="VEGA":GOTO9210
+9080 G2$="CANOPUS":GOTO9210
+9090 G2$="ALTAIR":GOTO9210
+9100 G2$="SAGITTARIUS":GOTO9210
+9110 G2$="POLLUX":GOTO9210
+
+REM The middle of the following line is missing from the source code.
+REM Interpolated.
+
+9120 ONZ4GOTO9130,9140,9150,9160,9170,9180,9190,9200
+9130 G2$="SIRIUS":GOTO9210
+9140 G2$="DENEB":GOTO9210
+9150 G2$="CAPELLA":GOTO9210
+9160 G2$="BETELGEUSE":GOTO9210
+9170 G2$="ALDEBARAN":GOTO9210
+9180 G2$="REGULUS":GOTO9210
+9190 G2$="ARCTURUS":GOTO9210
+9200 G2$="SPICA"
+
+9210 IFG5<>1THENONZ5GOTO9230,9240,9250,9260,9230,9240,9250,9260
+9220 RETURN
+
+9230 G2$=G2$+" I":RETURN
+9240 G2$=G2$+" II":RETURN
+9250 G2$=G2$+" III":RETURN
+9260 G2$=G2$+" IV":RETURN
