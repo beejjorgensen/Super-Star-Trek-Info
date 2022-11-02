@@ -1,33 +1,36 @@
 REM Variable Inventory
 REM
 REM B3 number of starbases
+REM B4 Starbase row???
+REM B5 Starbase column???
 REM B9 total number of starbases
-REM C(x,y) ???
-REM D0 damage...???
+REM C(9,2) ???
+REM C$ condition string ("*RED*")
+REM D0 1 if docked, 0 if not
 REM D4 ???
-REM D(x) ???
-REM E0 starting energy???
-REM E energy???
+REM D(8) ???
+REM E0 starting energy
+REM E energy
 REM FND(D) distance... to Klingons...???
 REM FNR(R) generate an integer random number between 1 and 8, inclusive
 REM G2$ Quadrant name
 REM G5 Flag for getting quadrant name. 1 means don't add Roman numerals.
-REM G(x,y) galactic quadrant map, KBS values (Klingons Bases Stars)
+REM G(8,8) galactic quadrant map, KBS values (Klingons Bases Stars)
 REM K3 the number of Klingons
 REM K7 ??? Gets initted to K9 after galaxy setup
 REM K9 total number of Klingons in galaxy???
 REM K(3,3) ??? klingon???
-REM N(x) ???
-REM P ???
-REM P0 ???
+REM N(3) ???
+REM P phaser energy???
+REM P0 starting phaser energy???
 REM Q$ 2D string representing the sector, 8x3 spaces wide per row, 8x8x3 spaces
-REM Q1 Player current quadrant Y [1,8]
-REM Q2 Player current quadrant X [1,8]
+REM Q1 Player current quadrant row [1,8]
+REM Q2 Player current quadrant column [1,8]
 REM S Shield level
-REM S1 Player current sector Y [1,8]
-REM S2 Player current sector X [1,8]
+REM S1 Player current sector row [1,8]
+REM S2 Player current sector column [1,8]
 REM S3 number of stars
-REM S8 Temporary variable in subroutine 8670
+REM S8 Temporary variable in subroutine 8670 and 8830
 REM S9 ???
 REM T ???
 REM T0 Starting stardate
@@ -35,11 +38,11 @@ REM T9 How many days to complete mission
 REM X$ Used for plural "S"
 REM X0$ Used for plural "IS"/"ARE"
 REM Z$ 25 spaces, used to build Q$
-REM Z1 Sector position Y temp variable in subroutine 8670
-REM Z2 Sector position X temp variable in subroutine 8670
-REM Z4 Y coordinate in the galactic map
-REM Z5 X coordinate in the galactic map
-REM Z(x,y) ??? Gets initted to 0
+REM Z1 Sector position row temp variable in subroutine 8670
+REM Z2 Sector position column temp variable in subroutine 8670
+REM Z4 row coordinate in the galactic map
+REM Z5 column coordinate in the galactic map
+REM Z(8,8) ??? Gets initted to 0
 
 REM Subroutine Inventory
 REM
@@ -73,6 +76,13 @@ REM     I   II  III IV  I   II  III IV
 REM
 REM 8        POLLUX         SPICA
 REM     I   II  III IV  I   II  III IV
+
+REM Display Symbols:
+REM
+REM   <*>   Enterprise
+REM   +K+   Klingon
+REM   >!<   Starbase
+REM    *    Star
 
 REM BASIC help
 REM https://ia800708.us.archive.org/8/items/BASIC-80_MBASIC_Reference_Manual/BASIC-80_MBASIC_Reference_Manual_text.pdf
@@ -167,8 +177,8 @@ REM S=0 Shields to zero
 470 DEF FND(D)=SQR((K(I,1)-S1)^2+(K(I,2)-S2)^2)
 475 DEF FNR(R)=INT(RND(R)*7.98+1.01)
 
-REM Player quadrant random X, Y 1..8
-REM Player sector random X, Y 1..8
+REM Player quadrant random row, column 1..8
+REM Player sector random row, column 1..8
 REM "ENTERPRIZE'S" [sic]
 
 480 REM INITIALIZE ENTERPRIZE'S POSITION
@@ -245,7 +255,7 @@ REM blocks until a single character is read.
 
 1310 REM HERE ANY TIME NEW QUADRANT ENTERED
 
-REM Set Z4 (Y coord) and Z5 (X coord) to random coordinates Q1,Q2
+REM Set Z4 (row) and Z5 (column) to random coordinates Q1,Q2
 REM Set K3 (number of Klingons) to 0
 REM Set B3 (number of starbases) to 0
 REM Set S3 (number of stars) to 0
@@ -294,13 +304,66 @@ REM Initialize Q$ to 192 spaces (8x8x3)
 
 1680 A$="<*>":Z1=S1:Z2=S2:GOSUB8670:IFK3<1THEN1820
 
+1720 FORI=1TOK3:GOSUB8590:A$="+K+":Z1=R1:Z2=R2
+1780 GOSUB8670:K(I,1)=R1:K(I,2)=R2:K(I,3)=S9*(0.5+RND(1)):NEXTI
 
-REM Subtroutine: Insert a string in the quadrant string
+1820 IFB3<1THEN1910
+1880 GOSUB8590:A$=">!<":Z1=R1:B4=R1:Z2=R2:B5=R2:GOSUB8670
+
+1910 FORI=1TOS3:GOSUB8590:A$=" * ":Z1=R1:Z2=R2:GOSUB8670:NEXTI
+
+1980 GOSUB6430
+
+
+REM Subroutine 6430:
+REM
+REM Inputs:
+REM 
+REM S1 =
+REM S2 =
+
+6420 REM SHORT RANGE SENSOR SCAN & STARTUP SUBROUTINE
+
+REM Test for being docked at a neighboring starbase
+
+6430 FORI=S1-1TOS1+1:FORJ=S2-1TOS2+1
+6450 IFINT(I+.5)<1ORINT(I+.5)>8ORINT(J+.5)<1ORINT(J+.5)>8THEN6540
+6490 A$=">!<":Z1=I:Z2=J:GOSUB8830IFZ3=1THEN6580
+6540 NEXTJ:NEXTI:D0=0:GOTO6650
+
+6580 D0=1:C$="DOCKED":E=E0:P=P0
+6620 PRINT"SHIELDS DROPPED FOR DOCKING PURPOSES":S=0:GOTO6720
+
+REM Condition status:
+REM
+REM If there are any Klingons in this quadrant: *RED*
+REM Elif energy level is under 10% full: YELLOW
+REM Else: GREEN
+
+6650 IFK3>0THENC$="*RED*":GOTO6720
+6660 C$="GREEN":IFE<E0*.1THENC$="YELLOW"
+
+REM Subroutine 8590: Find empty sector in quadrant
+REM
+REM Input:
+REM
+REM None
+REM
+REM Output:
+REM
+REM Z1 = Sector position row
+REM Z2 = Sector position column
+
+8580 REM FIND EMPTY PLACE IN QUADRANT (FOR THINGS)
+8590 R1=FNR(1):R2=FNR(1):A$="   ":Z1=R1:Z2=R2:GOSUB8830:IFZ3=0THEN8590
+8660 RETURN
+
+REM Subtroutine 8670: Insert a string in the quadrant string
 REM
 REM Inputs:
 REM
-REM Z2 = Sector position X
-REM Z1 = Sector position Y
+REM Z1 = Sector position row
+REM Z2 = Sector position column
 REM A$ = String to insert (must be 3 characters)
 REM Q$ = The string we're building
 REM
@@ -322,12 +385,29 @@ REM Insert at the left, right, or middle
 8690 IFS8=190THENQ$=LEFT$(Q$,189)+A$:RETURN
 8700 Q$=LEFT$(Q$,S8-1)+A$+RIGHT$(Q$,190-S8):RETURN
 
-REM Subroutine: Get Quadrant Name
+REM Subroutine 8830: Sector Comparison
+REM
+REM Input:
+REM
+REM Z1 = Sector row
+REM Z2 = Sector column
+REM A$ = String to compare
+REM
+REM Output:
+REM
+REM Z = 0 if the string doesn't match the sector contents, 1 if it does
+
+8820 REM STRING COMPARISON IN QUADRANT ARRAY
+8830 Z1=INT(Z1+.5):Z2=INT(Z2+.5):S8=(Z2-1)*3+(Z1-1)*24+1:Z3=0
+8890 IFMID$(Q$,S8,3)<>A$THENRETURN
+8900 Z3=1:RETURN
+
+REM Subroutine 9030: Get Quadrant Name
 REM
 REM Inputs:
 REM
-REM Z4 = Y coordinate in the galactic map
-REM Z5 = X coordinate in the galactic map
+REM Z4 = Galactic map row
+REM Z5 = Galactic map column
 REM G5 = Set to 1 to get the region name only (no Roman numerals)
 REM
 REM Outputs:
@@ -367,3 +447,4 @@ REM Interpolated.
 9240 G2$=G2$+" II":RETURN
 9250 G2$=G2$+" III":RETURN
 9260 G2$=G2$+" IV":RETURN
+
