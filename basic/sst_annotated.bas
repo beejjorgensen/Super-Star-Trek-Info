@@ -1,32 +1,41 @@
 REM Variable Inventory
 REM
+REM A$ temp string variable
 REM B3 number of starbases
 REM B4 Starbase row???
 REM B5 Starbase column???
 REM B9 total number of starbases
 REM C(9,2) ???
-REM C$ condition string ("*RED*")
+REM C$ condition string
+REM      *RED*  = There is at least one Klingon in this quadrant
+REM      YELLOW = Energy less than 10% of starting energy
+REM      GREEN  = Otherwise
+REM      DOCKED = If within 1 space of a starbase (including diagonals).
+REM               This overrides all other conditions.
+REM D(8) Damaged Systems
+REM      2 = Short Range Sensors
+REM      7 = ???
 REM D0 1 if docked, 0 if not
 REM D4 ???
-REM D(8) ???
-REM E0 starting energy
 REM E energy
+REM E0 starting energy
 REM FND(D) distance... to Klingons...???
 REM FNR(R) generate an integer random number between 1 and 8, inclusive
+REM G(8,8) galactic quadrant map, KBS values (Klingons Bases Stars)
 REM G2$ Quadrant name
 REM G5 Flag for getting quadrant name. 1 means don't add Roman numerals.
-REM G(8,8) galactic quadrant map, KBS values (Klingons Bases Stars)
+REM K(3,3) ??? klingon???
 REM K3 the number of Klingons
 REM K7 ??? Gets initted to K9 after galaxy setup
-REM K9 total number of Klingons in galaxy???
-REM K(3,3) ??? klingon???
+REM K9 total number of Klingons remaining in galaxy
 REM N(3) ???
-REM P phaser energy???
-REM P0 starting phaser energy???
+REM O1$ Row of dashed lines above and below SRS
+REM P photon torpedo count
+REM P0 starting photon torpedo count???
 REM Q$ 2D string representing the sector, 8x3 spaces wide per row, 8x8x3 spaces
 REM Q1 Player current quadrant row [1,8]
 REM Q2 Player current quadrant column [1,8]
-REM S Shield level
+REM S Shield energy level
 REM S1 Player current sector row [1,8]
 REM S2 Player current sector column [1,8]
 REM S3 number of stars
@@ -37,12 +46,12 @@ REM T0 Starting stardate
 REM T9 How many days to complete mission
 REM X$ Used for plural "S"
 REM X0$ Used for plural "IS"/"ARE"
+REM Z(8,8) ??? Gets initted to 0
 REM Z$ 25 spaces, used to build Q$
 REM Z1 Sector position row temp variable in subroutine 8670
 REM Z2 Sector position column temp variable in subroutine 8670
 REM Z4 row coordinate in the galactic map
 REM Z5 column coordinate in the galactic map
-REM Z(8,8) ??? Gets initted to 0
 
 REM Subroutine Inventory
 REM
@@ -171,6 +180,7 @@ REM and 35 (inclusive??).
 REM The following B9 is hard to read in the source. It could be E9, but
 REM is very likely not.
 REM
+REM P=10 Photon torpedoes to 10
 REM S=0 Shields to zero
 
 440 P=10:P0=P:S9=200:S=0:B9=0:K9=0:X$="":X0$=" IS "
@@ -312,15 +322,50 @@ REM Initialize Q$ to 192 spaces (8x8x3)
 
 1910 FORI=1TOS3:GOSUB8590:A$=" * ":Z1=R1:Z2=R2:GOSUB8670:NEXTI
 
+REM Print Short Range Sensor Scan
+
 1980 GOSUB6430
 
+REM Check for out of gas
 
-REM Subroutine 6430:
+1990 IFS+E>10THENIFE>10ORD(7)=0THEN2060
+2020 PRINT:PRINT"** FATAL ERROR **   YOU'VE JUST STRANDED YOUR SHIP IN "
+2030 PRINT"SPACE":PRINT"YOU HAVE INSUFFICIENT MANEUVERING ENERGY,";
+2040 PRINT" AND SHIELD CONTROL":PRINT"IS PRESENTLY INCAPABLE OF CROSS";
+2050 PRINT"-CIRCUITING TO ENGINE ROOM!!":GOTO6220
+
+REM Main command input
+
+2060 INPUT"COMMAND";A$
+2080 FORI=1TO9:IFLEFT$(A$,3)<>MID$(A1$,3*I-2,3)THEN2160
+2140 ONIGOTO2300,1980,4000,4260,4700,5530,5690,7290,6270
+2160 NEXTI:PRINT"ENTER ONE OF THE FOLLOWING:"
+2180 PRINT"  NAV  (TO SET COURSE)"
+2190 PRINT"  SRS  (FOR SHORT RANGE SENSOR SCAN)"
+2200 PRINT"  LRS  (FOR LONG RANGE SENSOR SCAN)"
+2210 PRINT"  PHA  (TO FIRE PHASERS)"
+2220 PRINT"  TOR  (TO FIRE PHOTON TORPEDOES)"
+2230 PRINT"  SHE  (TO RAISE OR LOWER SHIELDS)"
+2240 PRINT"  DAM  (FOR DAMAGE CONTROL REPORTS)"
+2250 PRINT"  COM  (TO CALL ON LIBRARY-COMPUTER)"
+2260 PRINT"  XXX  (TO RESIGN YOUR COMMAND)":PRINT:GOTO1990
+
+2290 REM COURSE CONTROL BEGINS HERE
+
+REM --- bookmark ---
+
+REM Subroutine 6430: Short Range Sensor Scan
 REM
 REM Inputs:
 REM 
-REM S1 =
-REM S2 =
+REM S1 = Player sector row
+REM S2 = Player sector column
+REM
+REM Outputs:
+REM
+REM D0 = 1 if docked, 0 if not docked
+REM C$ = Condition string: "*RED*", "YELLOW", "GREEN", "DOCKED"
+REM Prints SRS on console
 
 6420 REM SHORT RANGE SENSOR SCAN & STARTUP SUBROUTINE
 
@@ -342,6 +387,23 @@ REM Else: GREEN
 
 6650 IFK3>0THENC$="*RED*":GOTO6720
 6660 C$="GREEN":IFE<E0*.1THENC$="YELLOW"
+
+REM If short range sensors damanged, skip output
+
+6720 IFD(2)>=0THEN6770
+6730 PRINT:PRINT"*** SHORT RANGE SENSORS ARE OUT ***":PRINT:RETURN
+6770 O1$="---------------------------------":PRINTO1$:FORI=1TO8
+6820 FORJ=(I-1)*24+1TO(I-1)*24+22STEP3:PRINT" ";MID$(Q$,J,3);:NEXTJ
+6830 ONIGOTO6850,6900,6960,7020,7070,7120,7180,7240
+6850 PRINT"        STARDATE          ";INT(T*10)*.1:GOTO7260
+6900 PRINT"        CONDITION          ";C$:GOTO7260
+6960 PRINT"        QUADRANT          ";Q1;",";Q2:GOTO7260
+7020 PRINT"        SECTOR            ";S1;",";S2:GOTO7260
+7070 PRINT"        PHOTON TORPEDOES  ";INT(P):GOTO7260
+7120 PRINT"        TOTAL ENERGY      ";INT(E+S):GOTO7260
+7180 PRINT"        SHIELDS           ";INT(S):GOTO7260
+7240 PRINT"        KLINGONS REMAINING";INT(K9)
+7260 NEXTI:PRINTO1$:RETURN
 
 REM Subroutine 8590: Find empty sector in quadrant
 REM
