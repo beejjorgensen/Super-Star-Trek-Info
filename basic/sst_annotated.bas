@@ -12,9 +12,11 @@ REM      YELLOW = Energy less than 10% of starting energy
 REM      GREEN  = Otherwise
 REM      DOCKED = If within 1 space of a starbase (including diagonals).
 REM               This overrides all other conditions.
+REM C1 User input: ship course
 REM D(8) Damaged Systems
+REM      1 = Warp engines
 REM      2 = Short Range Sensors
-REM      7 = ???
+REM      7 = Shields???
 REM D0 1 if docked, 0 if not
 REM D4 ???
 REM E energy
@@ -44,6 +46,7 @@ REM S9 ???
 REM T ???
 REM T0 Starting stardate
 REM T9 How many days to complete mission
+REM W1 User input: warp factor
 REM X$ Used for plural "S"
 REM X0$ Used for plural "IS"/"ARE"
 REM Z(8,8) ??? Gets initted to 0
@@ -351,6 +354,50 @@ REM Main command input
 2260 PRINT"  XXX  (TO RESIGN YOUR COMMAND)":PRINT:GOTO1990
 
 2290 REM COURSE CONTROL BEGINS HERE
+
+REM Warp factors: (0-8] (or (0-0.2] if warp engines damaged)
+REM
+REM Warp factor of exactly 0 bails out.
+REM
+REM Other warp factors Scott complains the engines won't take it.
+REM
+REM Total energy needed to move:
+REM
+REM   N = W1 * 8 rounded to nearest integer
+REM   
+REM   Energy level in E must be at least this high or the action is
+REM   aborted.
+REM
+REM If there's enough energy in shields to make up the difference (and
+REM the shields aren't damaged), this information is shown to the user,
+REM but no further action is taken.
+REM
+REM This portion of code only gets the course in C1 and warp factor in
+REM W1; it doesn't actually move the ship.
+
+2300 INPUT"COURSE (0-9)";C1:IFC1=9THENC1=1
+2310 IFC1>=1ANDC1<9THEN2350
+2330 PRINT"   LT. SULU REPORTS, 'INCORRECT COURSE DATA, SIR!'":GOTO1990
+2350 X$="8":IFD(1)<0THENX$="0.2"
+2360 PRINT"WARP FACTOR (0-";X$;")";:INPUTW1:IFD(1)<0ANDW1>.2THEN2470
+2380 IFW1>0ANDW1<=8THEN2490
+2390 IFW1=0THEN1990
+2420 PRINT"   CHIEF ENGINEER SCOTT REPORTS 'THE ENGINES WON'T TAKE";
+2430 PRINT" WARP ";W1;"!'":GOTO1990
+
+REM "MAXIUM" [sic]
+
+2470 PRINT"WARP ENGINES ARE DAMAGED.  MAXIUM SPEED = WARP 0.2":GOTO1990
+2490 N=INT(W1*8+.5):IFE-N>=0THEN2590
+2500 PRINT"ENGINEERING REPORTS   'INSUFFICIENT ENERGY AVAILABLE"
+2510 PRINT"                       FOR MANEUVERING AT WARP";W1;"!'"
+2530 IFS<N-EORD(7)<0THEN1990
+
+REM "ACKNOWLEGES" [sic]
+
+2550 PRINT"DEFLECTOR CONTROL ROOM ACKNOWLEGES";S;"UNITS OF ENERGY"
+2560 PRINT"                         PRESENTLY DEPLOYED TO SHIELDS."
+2570 GOTO1990
 
 REM --- bookmark ---
 
