@@ -18,16 +18,25 @@ REM      1 = Warp engines
 REM      2 = Short Range Sensors
 REM      7 = Shields???
 REM D0 1 if docked, 0 if not
+REM D1 Flag to one-off damage report header
 REM D4 ???
+REM D6 ???
 REM E energy
 REM E0 starting energy
-REM FND(D) distance... to Klingons...???
-REM FNR(R) generate an integer random number between 1 and 8, inclusive
+REM FND(D) distance to Klingon #D in sector
+REM FNR(R) generate an integer random number between 1 and 8, inclusive.
+REM        Argument is forwarded to RND().
 REM G(8,8) galactic quadrant map, KBS values (Klingons Bases Stars)
-REM G2$ Quadrant name
+REM G2$ General string return value from subroutine
 REM G5 Flag for getting quadrant name. 1 means don't add Roman numerals.
-REM K(3,3) ??? klingon???
-REM K3 the number of Klingons
+REM H Energy hit from a Klingon attack
+REM K(3,3) Klingon position and presense information
+REM        There are up to three Klingons per quadrant
+REM        K(x,1) = Klingon x sector row
+REM        K(x,2) = Klingon x sector column
+REM        K(x,3) = Klingon energy level??? Indicates Klingon not
+REM                 present in sector if positive.
+REM K3 the number of Klingons in this quadrant
 REM K7 ??? Gets initted to K9 after galaxy setup
 REM K9 total number of Klingons remaining in galaxy
 REM N(3) ???
@@ -37,12 +46,13 @@ REM P0 starting photon torpedo count???
 REM Q$ 2D string representing the sector, 8x3 spaces wide per row, 8x8x3 spaces
 REM Q1 Player current quadrant row [1,8]
 REM Q2 Player current quadrant column [1,8]
+REM R1 General random number holder
 REM S Shield energy level
 REM S1 Player current sector row [1,8]
 REM S2 Player current sector column [1,8]
 REM S3 number of stars
 REM S8 Temporary variable in subroutine 8670 and 8830
-REM S9 ???
+REM S9 ??? set to 200?
 REM T ???
 REM T0 Starting stardate
 REM T9 How many days to complete mission
@@ -306,8 +316,8 @@ REM If no Klingons, skip combat message.
 1560 PRINT"COMBAT AREA      CONDITION RED":IFS>200THEN1590
 1580 PRINT"   SHIELDS DANGEROUSLY LOW"
 
-REM Initialize 3x3 K()??? grid to all zero
-REM Initialize Q$ to 192 spaces (8x8x3)
+REM Initialize Quadrant Klingon position array K() to all zero
+REM Initialize Quadrant display string Q$ to 192 spaces (8x8x3)
 
 1590 FORI=1TO3:K(I,1)=0:K(I,2)=0:NEXTI
 1600 FORI=1TO3:K(I,3)=0:NEXTI:Q$=Z$+Z$+Z$+Z$+Z$+Z$+Z$+LEFT$(Z$,17)
@@ -316,6 +326,13 @@ REM Initialize Q$ to 192 spaces (8x8x3)
 1670 REM "B3" STARBASES, & "S3" STARS ELSEWHERE.
 
 1680 A$="<*>":Z1=S1:Z2=S2:GOSUB8670:IFK3<1THEN1820
+
+REM Set Klingon position and energy level ???
+REM
+REM   S9 = 200
+REM   r = random in range [0.5,1.5)
+REM
+REM   K(I,3) = S9 * r ==> [100-300)
 
 1720 FORI=1TOK3:GOSUB8590:A$="+K+":Z1=R1:Z2=R2
 1780 GOSUB8670:K(I,1)=R1:K(I,2)=R2:K(I,3)=S9*(0.5+RND(1)):NEXTI
@@ -399,7 +416,149 @@ REM "ACKNOWLEGES" [sic]
 2560 PRINT"                         PRESENTLY DEPLOYED TO SHIELDS."
 2570 GOTO1990
 
+2580 REM KLINGONS MOVE/FIRE ON MOVING STARSHIP . . .
+
+2590 FORI=1TOK3:IFK(I,3)=0THEN2700
+
+REM Replace old Klingon position with empty
+
+2610 A$="   ":Z1=K(I,1):Z2=K(I,2):GOSUB8670:GOSUB8590
+
+REM Place Klingon in new empty slot
+
+2660 K(I,1)=Z1:K(I,2)=Z2:A$="+K+":GOSUB8670
+
+REM D1 = flag to one-print header
+REM D6 = Amount of repair, set to the input warp value, clamped at 1
+
+2700 NEXTI:GOSUB6000:D1=0:D6=W1:IFW1>=1THEND6=1
+
+REM This block of code prepares of report of systems that came back
+REM online this turn.
+REM
+REM For all crit systems, if the damage level >= 0, no report of repair
+
+2770 FORI=1TO8:IFD(I)>=0THEN2880
+
+REM Repair D6 [0,1] units of damage
+REM
+REM If damage between (-0.1, 0), clamp to -0.1 and don't report ???
+
+2790 D(I)=D(I)+D6:IFD(I)>-.1ANDD(I)<0THEND(I)=-.1:GOTO2880
+
+REM If still damaged, no report
+
+2800 IFD(I)<0THEN2880
+
+REM If we haven't printed the report header, print it
+
+2810 IFD1<>1THEND1=1:PRINT"DAMAGE CONTROL REPORT:  ";
+
+REM If we got to this point, the damage must have been repaired
+
+2840 PRINTTAB(8);:R1=I:GOSUB8790:PRINTG2$;" REPAIR COMPLETED."
+
+REM This next block of code is about things getting damaged or repaired
+REM early.
+REM
+REM There's a 79.9999% chance this inner block will occur:
+REM
+REM    There's a 40% chance this will occur:
+REM
+REM       Damage system by random [1,6)
+REM
+REM    Else this will occur:
+REM
+REM       Repair system by additional [1,4)
+REM
+REM Else nothing occurs
+
+2880 NEXTI:IFRND(1)>.2THEN3070
+2910 R1=FNR(1):IFRND(1)>=.6THEN3000
+2930 D(R1)=D(R1)-(RND(1)*5+1):PRINT"DAMAGE CONTROL REPORT:  ";
+2960 GOSUB8790:PRINTG2$;" DAMAGED":PRINT:GOTO3070
+3000 D(R1)=D(R1)+RND(1)*3+1:PRINT"DAMAGE CONTROL REPORT:  ";
+3030 GOSUB8790:PRINTG2$;" STATE OF REPAIR IMPROVED":PRINT
+
+3060 REM BEGIN MOVING STARSHIP
+
 REM --- bookmark ---
+
+REM Subroutine 6000: Klingons shooting
+REM
+REM Inputs:
+REM
+REM K3 = Number of Klingons in this quadrant
+REM D0 = Nonzero if docked
+REM K(3,3) = Klingon position and energy ???
+REM
+REM Outputs:
+REM
+REM H = Energy of hit
+REM S = Shield level
+REM D(8) = Critical damage status
+
+5990 REM KLINGONS SHOOTING
+
+REM Return if there are no Klingons here
+
+6000 IFK3<=0THENRETURN
+
+REM If docked, no damage.
+
+6010 IFD0<>0THENPRINT"STARBASE SHIELDS PROTECT THE ENTERPRISE":RETURN
+
+REM For all the currently-active Klingons in the quadrant:
+
+6040 FORI=1TO3:IFK(I,3)<=0THEN6200
+
+REM Compute the energy of the hit (H)
+REM
+REM   e = K(I,3)  Energy level
+REM   f = random in range [2-3)
+REM   d = Distance of Klingon I from the Enterprise
+REM
+REM   H = trunc(e / d) * f
+REM
+REM Reduce shields (S) by H:
+REM
+REM   S = S - H
+REM
+REM Reduce Klingon energy ??? by dividing it by [5-6)
+REM
+REM   K(I,3) = e / (3 + f)
+
+REM I think the source might have a bug here. It looks like it calls
+REM FND(1), but that would always divide `this` Klingon's energy by the
+REM distance to Klingon #1. It makes more sense to divide it by the
+REM distance to this Klingon, FND(I).
+REM
+REM The printout of the source is unclear in the book. The Vintage Basic
+REM version has FND(1).
+
+6060 H=INT((K(I,3)/FND(I))*(2+RND(1))):S=S-H:K(I,3)=K(I,3)/(3+RND(0))
+6080 PRINTH;"UNIT HIT ON ENTERPRISE FROM SECTOR";K(I,1);",";K(I,2)
+
+REM If shields fall to 0 or lower, game over, man.
+
+6090 IFS<=0THEN6240
+
+REM If the damage is 20 or more, a critical hit might occur.
+
+6100 PRINT"      <SHIELDS DOWN TO";S;"UNITS>":IFH<20THEN6200
+
+REM If the damage is 20 or more, then we're saved if either:
+REM
+REM   We roll > 60%, or...
+REM   The ratio of hit energy to shield energy < 0.02
+
+6120 IFRND(1)>.6ORH/S<=.02THEN6200
+
+REM Otherwise if we get here, we're taking a crit:
+
+6140 R1=FNR(1):D(R1)=D(R1)-H/S-.5*RND(1):GOSUB8790
+6170 PRINT"DAMAGE CONTROL REPORTS '";G2$;" DAMAGED BY THE HIT'"
+6200 NEXTI:RETURN
 
 REM Subroutine 6430: Short Range Sensor Scan
 REM
@@ -493,6 +652,28 @@ REM Insert at the left, right, or middle
 8680 IFS8=1THENQ$=A$+RIGHT$(Q$,189):RETURN
 8690 IFS8=190THENQ$=LEFT$(Q$,189)+A$:RETURN
 8700 Q$=LEFT$(Q$,S8-1)+A$+RIGHT$(Q$,190-S8):RETURN
+
+REM Subroutine 8790: Get Device Name
+REM
+REM Input:
+REM
+REM R1 = The device number 1-8
+REM
+REM Output:
+REM
+REM G2$ = The device name
+
+8780 REM PRINTS DEVICE NAME
+
+8790 ONR1GOTO8792,8794,8796,8798,8800,8802,8804,8806
+8792 G2$="WARP ENGINES":RETURN
+8794 G2$="SHORT RANGE SENSORS":RETURN
+8796 G2$="LONG RANGE SENSORS":RETURN
+8798 G2$="PHASER CONTROL":RETURN
+8800 G2$="PHOTON TUBES":RETURN
+8802 G2$="DAMAGE CONTROL":RETURN
+8804 G2$="SHIELD CONTROL":RETURN
+8806 G2$="LIBRARY-COMPUTER":RETURN
 
 REM Subroutine 8830: Sector Comparison
 REM
