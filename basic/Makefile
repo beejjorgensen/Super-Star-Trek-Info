@@ -9,4 +9,4 @@ sst_inst.bas: sst_inst_annotated.bas
 .PHONY: diff
 
 diff: sst.bas
-	vimdiff sst.bas superstartrek.bas
+	vimdiff sst.bas sst_vintagebasic.bas
