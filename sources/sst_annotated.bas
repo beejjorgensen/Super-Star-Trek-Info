@@ -592,21 +592,35 @@ REM Add to stardate. If time exceeded, jump to game over.
 3480 GOTO1980
 
 REM Routine 3500 Handle maneuvering off the edge of the quadrant
+REM 
+REM Called repeatedly during ship motion.
 REM
 REM Inputs:
 REM 
-REM X =
-REM Y =
-REM N = 
+REM S1 = Sector row
+REM S2 = Sector column
+REM Q1 = Quadrant row
+REM Q2 = Quadrant column
+REM X = Previous S1
+REM Y = Previous S2
+REM Q4 = Previous Q1
+REM Q5 = Previous Q2
+REM N = Energy used for this maneuver
 REM
 REM Outputs:
-REM
+REM 
+REM X5 = 1 if we tried to go off the map, 0 otherwise
 
 3490 REM EXCEEDED QUADRANT LIMITS
 
 3500 X=8*Q1+X+N*X1:Y=8*Q2+Y+N*X2:Q1=INT(X/8):Q2=INT(Y/8):S1=INT(X-Q1*8)
 3550 S2=INT(Y-Q2*8):IFS1=0THENQ1=Q1-1:S1=8
 3590 IFS2=0THENQ2=Q2-1:S2=8
+
+REM Check if new Q1,Q2 coordinates are out of bounds. If so, clamp
+REM quadrant and sector coordinates at galactic edge and set X5=1 so
+REM that Starfleet complains.
+
 3620 X5=0:IFQ1<1THENX5=1:Q1=1:S1=1
 3670 IFQ1>8THENX5=1:Q1=8:S1=8
 3710 IFQ2<1THENX5=1:Q2=1:S2=1
@@ -622,7 +636,8 @@ REM Check for game over (timeout)
 
 3850 IFT>T0+T9THEN6220
 
-REM ????
+REM If we didn't move, jump back to 3370 (place Enterprise, update
+REM stardate, then back to main loop).
 
 3860 IF8*Q1+Q2=8*Q4+Q5THEN3370
 
@@ -630,8 +645,6 @@ REM Add to stardate. Check for shield energy needed for maneuver. Goto
 REM "Enter new quadrant" code.
 
 3870 T=T+1:GOSUB3910:GOTO1320
-
-REM --- bookmark ---
 
 REM Subroutine 3910: Use shield energy for maneuvering
 REM
