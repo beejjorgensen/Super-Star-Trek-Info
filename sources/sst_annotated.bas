@@ -386,6 +386,8 @@ REM   K(I,3) = S9 * r ==> [100-300)
 
 1910 FORI=1TOS3:GOSUB8590:A$=" * ":Z1=R1:Z2=R2:GOSUB8670:NEXTI
 
+REM --- Main loop ---
+REM
 REM Print Short Range Sensor Scan
 
 1980 GOSUB6430
@@ -586,9 +588,52 @@ REM Add to stardate. If time exceeded, jump to game over.
 
 3450 T=T+T8:IFT>T0+T9THEN6220
 
+3470 REM SEE IF DOCKED, THEN GET COMMAND
+3480 GOTO1980
+
+REM Routine 3500 Handle maneuvering off the edge of the quadrant
+REM
+REM Inputs:
+REM 
+REM X =
+REM Y =
+REM N = 
+REM
+REM Outputs:
+REM
+
+3490 REM EXCEEDED QUADRANT LIMITS
+
+3500 X=8*Q1+X+N*X1:Y=8*Q2+Y+N*X2:Q1=INT(X/8):Q2=INT(Y/8):S1=INT(X-Q1*8)
+3550 S2=INT(Y-Q2*8):IFS1=0THENQ1=Q1-1:S1=8
+3590 IFS2=0THENQ2=Q2-1:S2=8
+3620 X5=0:IFQ1<1THENX5=1:Q1=1:S1=1
+3670 IFQ1>8THENX5=1:Q1=8:S1=8
+3710 IFQ2<1THENX5=1:Q2=1:S2=1
+3750 IFQ2>8THENX5=1:Q2=8:S2=8
+3790 IFX5=0THEN3860
+3800 PRINT"LT. UHURA REPORTS MESSAGE FROM STARFLEET COMMAND:"
+3810 PRINT"  'PERMISSION TO ATTEMPT CROSSING OF GALACTIC PERIMETER"
+3820 PRINT"  IS HEREBY *DENIED*.  SHUT DOWN YOUR ENGINES.'"
+3830 PRINT"CHIEF ENGINEER SCOTT REPORTS  'WARP ENGINES SHUT DOWN"
+3840 PRINT"  AT SECTOR";S1;",";S2;"OF QUADRANT";Q1;",";Q2;".'"
+
+REM Check for game over (timeout)
+
+3850 IFT>T0+T9THEN6220
+
+REM ????
+
+3860 IF8*Q1+Q2=8*Q4+Q5THEN3370
+
+REM Add to stardate. Check for shield energy needed for maneuver. Goto
+REM "Enter new quadrant" code.
+
+3870 T=T+1:GOSUB3910:GOTO1320
+
 REM --- bookmark ---
 
-REM Subrouting 3910: Use shield energy for maneuvering
+REM Subroutine 3910: Use shield energy for maneuvering
 REM
 REM Inputs:
 REM
@@ -679,7 +724,15 @@ REM   The ratio of hit energy to shield energy < 0.02
 
 6120 IFRND(1)>.6ORH/S<=.02THEN6200
 
-REM Otherwise if we get here, we're taking a crit:
+REM Otherwise if we get here, we're taking a crit.
+REM
+REM Damage calculation:
+REM
+REM    H = energy hit value
+REM    S = shield level
+REM    r = random [0,0.5)
+REM
+REM    additional_damage = -(H / S + r)
 
 6140 R1=FNR(1):D(R1)=D(R1)-H/S-.5*RND(1):GOSUB8790
 6170 PRINT"DAMAGE CONTROL REPORTS '";G2$;" DAMAGED BY THE HIT'"
