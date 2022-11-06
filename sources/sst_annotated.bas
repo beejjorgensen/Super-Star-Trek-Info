@@ -13,7 +13,8 @@ REM      GREEN  = Otherwise
 REM      DOCKED = If within 1 space of a starbase (including diagonals).
 REM               This overrides all other conditions.
 REM C1 User input: ship course
-REM D(8) Damaged Systems
+REM D(8) Damaged Systems; negative means rough time to repair, >=0 means
+REM                       working.
 REM      1 = Warp engines
 REM      2 = Short Range Sensors
 REM      7 = Shields???
@@ -39,6 +40,7 @@ REM                 present in sector if positive.
 REM K3 the number of Klingons in this quadrant
 REM K7 ??? Gets initted to K9 after galaxy setup
 REM K9 total number of Klingons remaining in galaxy
+REM N Energy needed for warp maneuver
 REM N(3) ???
 REM O1$ Row of dashed lines above and below SRS
 REM P photon torpedo count
@@ -53,8 +55,9 @@ REM S2 Player current sector column [1,8]
 REM S3 number of stars
 REM S8 Temporary variable in subroutine 8670 and 8830
 REM S9 ??? set to 200?
-REM T ???
+REM T Current startdate
 REM T0 Starting stardate
+REM T8 Time we're going to advance the stardate
 REM T9 How many days to complete mission
 REM W1 User input: warp factor
 REM X$ Used for plural "S"
@@ -65,6 +68,20 @@ REM Z1 Sector position row temp variable in subroutine 8670
 REM Z2 Sector position column temp variable in subroutine 8670
 REM Z4 row coordinate in the galactic map
 REM Z5 column coordinate in the galactic map
+
+REM Stardate Advance and Repair Time Rules:
+REM 
+REM    The most the stardate will advance per maneuver is 1.
+REM
+REM    If you maneuver at under Warp 1, the stardate will advance by the
+REM    warp number truncated to a single decimal place. (e.g. 0.999 ->
+REM    0.9).
+REM
+REM    The most repair that can be done to a critical system during a
+REM    maneuver is 1.
+REM
+REM    If you maneuver at under Warp 1, the damage is repaired by a
+REM    level equal to your warp number. (Not truncated.)
 
 REM Subroutine Inventory
 REM
@@ -405,6 +422,9 @@ REM W1; it doesn't actually move the ship.
 REM "MAXIUM" [sic]
 
 2470 PRINT"WARP ENGINES ARE DAMAGED.  MAXIUM SPEED = WARP 0.2":GOTO1990
+
+REM Compute energy needed for maneuver (N)
+
 2490 N=INT(W1*8+.5):IFE-N>=0THEN2590
 2500 PRINT"ENGINEERING REPORTS   'INSUFFICIENT ENERGY AVAILABLE"
 2510 PRINT"                       FOR MANEUVERING AT WARP";W1;"!'"
@@ -461,9 +481,9 @@ REM If we got to this point, the damage must have been repaired
 REM This next block of code is about things getting damaged or repaired
 REM early.
 REM
-REM There's a 79.9999% chance this inner block will occur:
+REM There's a 20% chance this inner block will occur:
 REM
-REM    There's a 40% chance this will occur:
+REM    There's a 60% chance this will occur:
 REM
 REM       Damage system by random [1,6)
 REM
@@ -482,7 +502,69 @@ REM Else nothing occurs
 
 3060 REM BEGIN MOVING STARSHIP
 
+REM Remove old Enterprise from map
+
+3070 A$="   ":Z1=INT(S1):Z2=INT(S2):GOSUB8670
+
+REM X1 and X2 are the step offsets ???
+
+3110 X1=C(C1,1)+(C(C1+1,1)-C(C1,1))*(C1-INT(C1)):X=S1:Y=S2
+3140 X2=C(C1,2)+(C(C1+1,2)-C(C1,2))*(C1-INT(C1)):Q4=Q1:Q5=Q2
+
+REM Start moving, but if we go out of quadrant, handle it at 3500
+
+3170 FORI=1TON:S1=S1+X1:S2=S2+X2:IFS1<1ORS1>=9ORS2<1ORS2>=9THEN3500
+
+REM Make sure we're about to move into empty space
+
+3240 S8=INT(S1)*24+INT(S2)*3-26:IFMID$(Q$,S8,2)="  "THEN3360
+
+REM If we didn't, move back and tell user
+
+3320 S1=INT(S1-X1):S2=INT(S2-X2):PRINT"WARP ENGINES SHUT DOWN AT ";
+
+REM "NAVAGATION" [sic]
+
+3350 PRINT"SECTOR";S1;",";S2;"DUE TO BAD NAVAGATION":GOTO3370
+
+3360 NEXTI:S1=INT(S1):S2=INT(S2)
+
+REM Place Enterprise a new position
+REM T8 is time we're going to advance the clock, default to 1
+
+3370 A$="<*>":Z1=INT(S1):Z2=INT(S2):GOSUB8670:GOSUB3910:T8=1
+
+REM If the warp factor is less than one, truncate T8 to a single decimal
+REM place.
+
+3430 IFW1<1THENT8=.1*INT(10*W1)
+
+REM Add to stardate. If time exceeded, jump to game over.
+
+3450 T=T+T8:IFT>T0+T9THEN6220
+
 REM --- bookmark ---
+
+REM Subrouting 3910: Use shield energy for maneuvering
+REM
+REM Inputs:
+REM
+REM E = Ship energy
+REM N = Energy needed for maneuver
+REM
+REM Outputs:
+REM
+REM E = Modified ship energy
+REM S = Modified ship shield energy
+
+3900 REM MANEUVER ENERGY S/R **
+
+3910 E=E-N-10:IFE>=0THENRETURN
+3930 PRINT"SHIELD CONTROL SUPPLIES ENERGY TO COMPLETE THE MANEUVER."
+3940 S=S+E:E=0:IFS<=0THENS=0
+3980 RETURN
+
+
 
 REM Subroutine 6000: Klingons shooting
 REM
