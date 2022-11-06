@@ -5,7 +5,7 @@ REM B3 number of starbases
 REM B4 Starbase row???
 REM B5 Starbase column???
 REM B9 total number of starbases
-REM C(9,2) ???
+REM C(9,2) row/column offsets for navigation directions
 REM C$ condition string
 REM      *RED*  = There is at least one Klingon in this quadrant
 REM      YELLOW = Energy less than 10% of starting energy
@@ -224,8 +224,35 @@ REM "ENTERPRIZE'S" [sic]
 480 REM INITIALIZE ENTERPRIZE'S POSITION
 490 Q1=FNR(1):Q2=FNR(1):S1=FNR(1):S2=FNR(1)
 
-REM Initialize C array
-REM ???
+REM Initialize C(9,2) array
+REM
+REM Row-column offsets for navigation directions.
+REM
+REM The left index is the user-inputted course. Right index is the row
+REM (0) or column (1) offset for that course.
+REM
+REM     1   2
+REM
+REM 1   0   1
+REM 2  -1   1
+REM 3  -1   0
+REM 4  -1  -1
+REM 5   0  -1
+REM 6   1  -1
+REM 7   1   0
+REM 8   1   1
+REM 9   0   1
+REM
+REM    (-1,-1) (-1,0)  (-1,1)
+REM
+REM          4    3    2
+REM           \   |   /
+REM(0,-1) 5 ------+------ 1,9 (0,1)
+REM           /   |   \
+REM          6    7    8
+REM
+REM    (1,-1)   (1,0)   (1,1)
+REM
 
 530 FORI=1TO9:C(I,1)=0:C(I,2)=0:NEXTI
 540 C(3,1)=-1:C(2,1)=-1:C(4,1)=-1:C(4,2)=-1:C(5,2)=-1:C(6,2)=-1
@@ -506,12 +533,28 @@ REM Remove old Enterprise from map
 
 3070 A$="   ":Z1=INT(S1):Z2=INT(S2):GOSUB8670
 
-REM X1 and X2 are the step offsets ???
+REM C1 is the course
+REM
+REM X1 and X2 are the row and column step offsets
+REM
+REM Computed by looking up the offset for the integer course and lerping
+REM the fractional part to the next course.
+REM
+REM row_offset = C(input_course,1)
+REM next_row_offset = C(input_course + 1, 1)
+REM
+REM fractional_course = frac(input_course)  // Just fractional part
+REM row_offset_diff = next_row_offset - row_offset
+REM
+REM interpolated_fractional_offset = row_offset_diff * fractional_course
+REM
+REM row_step = row_offset + interpolated_fractional_offset
 
 3110 X1=C(C1,1)+(C(C1+1,1)-C(C1,1))*(C1-INT(C1)):X=S1:Y=S2
 3140 X2=C(C1,2)+(C(C1+1,2)-C(C1,2))*(C1-INT(C1)):Q4=Q1:Q5=Q2
 
 REM Start moving, but if we go out of quadrant, handle it at 3500
+REM N is the amount of energy used for the maneuver
 
 3170 FORI=1TON:S1=S1+X1:S2=S2+X2:IFS1<1ORS1>=9ORS2<1ORS2>=9THEN3500
 
