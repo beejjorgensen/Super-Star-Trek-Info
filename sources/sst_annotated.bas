@@ -41,8 +41,8 @@ REM K3 the number of Klingons in this quadrant
 REM K7 ??? Gets initted to K9 after galaxy setup
 REM K9 total number of Klingons remaining in galaxy
 REM N Energy needed for warp maneuver
-REM N(3) ???
-REM O1$ Row of dashed lines above and below SRS
+REM N(3) Temporary holding in LRS for galactic scan data
+REM O1$ Row of dashed lines above and below SRS, LRS
 REM P photon torpedo count
 REM P0 starting photon torpedo count???
 REM Q$ 2D string representing the sector, 8x3 spaces wide per row, 8x8x3 spaces
@@ -62,7 +62,7 @@ REM T9 How many days to complete mission
 REM W1 User input: warp factor
 REM X$ Used for plural "S"
 REM X0$ Used for plural "IS"/"ARE"
-REM Z(8,8) ??? Gets initted to 0
+REM Z(8,8) Discovered map. If 0, undiscovered. Else a copy of G(r,c).
 REM Z$ 25 spaces, used to build Q$
 REM Z1 Sector position row temp variable in subroutine 8670
 REM Z2 Sector position column temp variable in subroutine 8670
@@ -82,13 +82,6 @@ REM    maneuver is 1.
 REM
 REM    If you maneuver at under Warp 1, the damage is repaired by a
 REM    level equal to your warp number. (Not truncated.)
-
-REM Subroutine Inventory
-REM
-REM 9030: Get quadrant name.
-REM       Input: Z4,Z5 Galactic map coordinates
-REM              G5 Set to 1 to not add Roman numerals
-REM       Output: G2$ Quadrant name
 
 REM     1   2   3   4   5   6   7   8
 REM
@@ -159,6 +152,9 @@ REM Unlike the END statement, the STOP statement does not close files.
 REM
 REM BASIC-80 always returns to the command level after a STOP is
 REM executed. Execution is resumed by issuing a CONT command.
+
+REM `INP(I)`: Returns the byte read from port I. I must be in the range
+REM 0 to 255.
 
 10 REM SUPER STARTREK - MAY 16,1978 - REQUIRES 24K MEMORY
 30 REM
@@ -243,23 +239,23 @@ REM 7   1   0
 REM 8   1   1
 REM 9   0   1
 REM
-REM    (-1,-1) (-1,0)  (-1,1)
+REM     (-1,-1) (-1,0)  (-1,1)
 REM
-REM          4    3    2
-REM           \   |   /
-REM(0,-1) 5 ------+------ 1,9 (0,1)
-REM           /   |   \
-REM          6    7    8
+REM           4    3    2
+REM            \   |   /
+REM (0,-1) 5 ------+------ 1,9 (0,1)
+REM            /   |   \
+REM           6    7    8
 REM
-REM    (1,-1)   (1,0)   (1,1)
+REM     (1,-1)   (1,0)   (1,1)
 REM
 
 530 FORI=1TO9:C(I,1)=0:C(I,2)=0:NEXTI
 540 C(3,1)=-1:C(2,1)=-1:C(4,1)=-1:C(4,2)=-1:C(5,2)=-1:C(6,2)=-1
 600 C(1,2)=1:C(2,2)=1:C(6,1)=1:C(7,1)=1:C(8,1)=1:C(8,2)=1:C(9,2)=1
 
-REM Initialize D array
-REM ???
+REM Initialize D array--days left to repair damage to critical systems,
+REM or >=0 if undamaged.
 
 670 FORI=1TO8:D(I)=0:NEXTI
 
@@ -277,8 +273,6 @@ REM 3% chance of 2 Klingons
 REM 15% chance of 1 Klingon
 REM
 REM 4% chance of 1 starbase
-REM
-REM Between 1.01 and 8.99 stars? Is this an integer array?
 
 820 FORI=1TO8:FORJ=1TO8:K3=0:Z(I,J)=0:R1=RND(1)
 850 IFR1>.98THENK3=3:K9=K9+3:GOTO980
@@ -286,21 +280,34 @@ REM Between 1.01 and 8.99 stars? Is this an integer array?
 870 IFR1>.80THENK3=1:K9=K9+1
 980 B3=0:IFRND(1)>.96THENB3=1:B9=B9+1
 
-REM If total klingons > T9, then T9 = total klingons + 1
+REM Galactic map initialized to:
+REM    K3 Klingons
+REM    B3 Starbases
+REM    Random number [11,18] stars
+REM
+REM If the total Klingons (K9) is greater than the number of days in
+REM this game (T9), set the number of days to the number of Klingons
+REM plus 1.
 
 1040 G(I,J)=K3*100+B3*10+FNR(1):NEXTJ:NEXTI:IFK9>T9THENT9=K9+1
-1100 IFB9<>0THEN1200
 
-REM This happens if the total number of bases is 0.
-REM Q1 and Q2 are inited to random [1,8], quadrant coords.
+REM If there are any starbases in the galaxy, skip:
+REM    Add a Klingon to Enterprise's quadrant if there are fewer than 2.
+REM    Add a starbase to Enterprise's quadrant.
+REM    Move Enterprise to another random quadrant.
+
+1100 IFB9<>0THEN1200
 
 REM If the quadrant has less than 2 klingons, add a klingon to the
 REM quadrant. Increment the total number of klingons.
 
 1150 IFG(Q1,Q2)<200THENG(Q1,Q2)=G(Q1,Q2)+100:K9=K9+1
 
-REM Set total starbases to 1. Add a starbase to this quadrant. Set Q1
-REM and Q2 to a new random quadrant.
+REM Set total starbases to 1. (We only run this if there were no
+REM starbases added to the galaxy earlier.) Add a starbase to this
+REM quadrant.
+REM
+REM Then move Enterprise to a new random quadrant.
 
 1160 B9=1:G(Q1,Q2)=G(Q1,Q2)+10:Q1=FNR(1):Q2=FNR(1)
 
@@ -315,8 +322,7 @@ REM up the pluralization variables X$ and X0$.
 1270 PRINT"  ";B9;"STARBASE";X$;" IN THE GALAXY FOR RESUPPLYING YOUR SHIP"
 1280 PRINT:PRINT"HIT ANY KEY EXCEPT RETURN WHEN READY TO ACCEPT COMMAND"
 
-REM INP isn't documented in the BASIC 80 manual, but presumably it
-REM blocks until a single character is read.
+REM INP(1) returns the byte from port 1, presumably stdin.
 
 1300 I=RND(1):IF INP(1)=13 THEN 1300
 
@@ -328,12 +334,11 @@ REM Set B3 (number of starbases) to 0
 REM Set S3 (number of stars) to 0
 REM Set G5 (flag for Roman numerals in quadrant names) to "Do add Roman numerals"
 REM Set D4 (???) to a random number between 0 and .5
-REM Set Z (???) to G (galactic quadrant map) at random coords Q1,Q2
+REM Set Z to G at this quadrant to mark it "discovered"
 
 1320 Z4=Q1:Z5=Q2:K3=0:B3=0:S3=0:G5=0:D4=.5*RND(1):Z(Q1,Q2)=G(Q1,Q2)
 
-REM If our random coordinates are out of range, skip the first quandrant
-REM intro.
+REM BUG? I can't figure out when this would ever be true:
 
 1390 IFQ1<1ORQ1>8ORQ2<1ORQ2>8THEN1600
 
@@ -352,8 +357,8 @@ REM Extract number of starbases in this quardrant to B3
 
 1500 PRINT:K3=INT(G(Q1,Q2)*.01):B3=INT(G(Q1,Q2)*.1)-10*K3
 
-REM Extract number of stars in this quardrant to S3
-REM If no Klingons, skip combat message.
+REM Extract number of stars in this quadrant to S3. If no Klingons, skip
+REM combat message.
 
 1540 S3=G(Q1,Q2)-100*K3-10*B3:IFK3=0THEN1590
 
@@ -666,6 +671,34 @@ REM S = Modified ship shield energy
 3980 RETURN
 
 
+REM Routine 4000: LRS
+REM
+REM Inputs:
+REM
+REM Outputs:
+
+3990 REM LONG RANGE SENSOR SCAN CODE
+
+4000 IFD(3)<0THENPRINT"LONG RANGE SENSORS ARE INOPERABLE":GOTO1990
+
+4030 PRINT"LONG RANGE SCAN FOR QUADRANT";Q1;",";Q2
+4040 O1$="-------------------":PRINTO1$
+4060 FORI=Q1-1TOQ1+1:N(1)=-1:N(2)=-2:N(3)=-3:FORJ=Q2-1TOQ2+1
+
+REM If not out of bounds:
+REM   Set N() array to the values of the quadrants in this row
+REM   add Quadrant I,J to discovered map Z()
+
+4120 IFI>0ANDI<9ANDJ>0ANDJ<9THENN(J-Q2+2)=G(I,J):Z(I,J)=G(I,J)
+
+REM Print out the row, or "*** " if out of bounds
+
+4180 NEXTJ:FORL=1TO3:PRINT": ";:IFN(L)<0THENPRINT"*** ";:GOTO4230
+
+REM Effectively pads left zeros to three digits
+
+4210 PRINTRIGHT$(STR$(N(L)+1000),3);" ";
+4230 NEXTL:PRINT":":PRINTO1$:NEXTI:GOTO1990
 
 REM Subroutine 6000: Klingons shooting
 REM
@@ -711,15 +744,16 @@ REM Reduce Klingon energy ??? by dividing it by [5-6)
 REM
 REM   K(I,3) = e / (3 + f)
 
-REM I think the source might have a bug here. It looks like it calls
-REM FND(1), but that would always divide `this` Klingon's energy by the
-REM distance to Klingon #1. It makes more sense to divide it by the
-REM distance to this Klingon, FND(I).
+REM BUG? It looks like it calls FND(1), but that would always divide
+REM `this` Klingon's energy by the distance to Klingon #1. It makes more
+REM sense to divide it by the distance to this Klingon, FND(I).
 REM
-REM The printout of the source is unclear in the book. The Vintage Basic
-REM version has FND(1).
+REM The printout of the source is unclear in the book scan. Every BASIC
+REM version I've found has FND(1).
+REM
+REM It looks like FND(1) in the SPACEWR source, too.
 
-6060 H=INT((K(I,3)/FND(I))*(2+RND(1))):S=S-H:K(I,3)=K(I,3)/(3+RND(0))
+6060 H=INT((K(I,3)/FND(1))*(2+RND(1))):S=S-H:K(I,3)=K(I,3)/(3+RND(0))
 6080 PRINTH;"UNIT HIT ON ENTERPRISE FROM SECTOR";K(I,1);",";K(I,2)
 
 REM If shields fall to 0 or lower, game over, man.
