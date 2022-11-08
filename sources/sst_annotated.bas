@@ -17,7 +17,9 @@ REM D(8) Damaged Systems; negative means rough time to repair, >=0 means
 REM                       working.
 REM      1 = Warp engines
 REM      2 = Short Range Sensors
+REM      4 = Phasers
 REM      7 = Shields???
+REM      8 = Computer
 REM D0 1 if docked, 0 if not
 REM D1 Flag to one-off damage report header
 REM D4 ???
@@ -699,6 +701,33 @@ REM Effectively pads left zeros to three digits
 
 4210 PRINTRIGHT$(STR$(N(L)+1000),3);" ";
 4230 NEXTL:PRINT":":PRINTO1$:NEXTI:GOTO1990
+
+REM Routine 4260: PHA control
+REM
+REM Inputs:
+REM
+REM Outputs:
+
+4250 REM PHASER CONTROL CODE BEGINS HERE
+4260 IFD(4)<0THENPRINT"PHASERS INOPERATIVE":GOTO1990
+
+REM Make sure there are Klingons in this quadrant
+
+4265 IFK3>0THEN4330
+
+4270 PRINT"SCIENCE OFFICER SPOCK REPORTS  'SENSORS SHOW NO ENEMY SHIPS"
+4280 PRINT"                                IN THIS QUADRANT'":GOTO1990
+
+4330 IFD(8)<0THENPRINT"COMPUTER FAILURE HAMPERS ACCURACY"
+
+REM Get number of units to fire--doesn't include shield energy.
+REM Enter <=0 to cancel.
+
+4350 PRINT"PHASERS LOCKED ON TARGET;  ";
+4360 PRINT"ENERGY AVAILABLE =";E;"UNITS"
+4370 INPUT"NUMBER OF UNITS TO FIRE";X:IFX<=0THEN1990
+
+REM -- bookmark --
 
 REM Subroutine 6000: Klingons shooting
 REM
