@@ -1,3 +1,7 @@
+REM  Downloaded from https://gitlab.com/esr/super-star-trek/-/tree/master
+
+REM  Extracted from HP tape image 16-Nov-2003 by Pete Turnbull
+
 1  REM ****  HP BASIC PROGRAM LIBRARY  ******************************
 2  REM
 3  REM       STTR1: STAR TREK
