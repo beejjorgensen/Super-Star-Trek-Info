@@ -795,15 +795,6 @@ REM Reduce Klingon energy ??? by dividing it by [5-6)
 REM
 REM   K(I,3) = e / (3 + f)
 
-REM BUG? It looks like it calls FND(1), but that would always divide
-REM `this` Klingon's energy by the distance to Klingon #1. It makes more
-REM sense to divide it by the distance to this Klingon, FND(I).
-REM
-REM The printout of the source is unclear in the book scan. Every BASIC
-REM version I've found has FND(1).
-REM
-REM It looks like FND(1) in the SPACEWR source, too.
-
 6060 H=INT((K(I,3)/FND(1))*(2+RND(1))):S=S-H:K(I,3)=K(I,3)/(3+RND(0))
 6080 PRINTH;"UNIT HIT ON ENTERPRISE FROM SECTOR";K(I,1);",";K(I,2)
 
