@@ -17,9 +17,12 @@ REM D(8) Damaged Systems; negative means rough time to repair, >=0 means
 REM                       working.
 REM      1 = Warp engines
 REM      2 = Short Range Sensors
-REM      4 = Phasers
-REM      7 = Shields???
-REM      8 = Computer
+REM      3 = Long Range Sensors
+REM      4 = Phaser Control
+REM      5 = Photon Tubes
+REM      6 = Damage Control
+REM      7 = Shield Control
+REM      8 = Library-Computer
 REM D0 1 if docked, 0 if not
 REM D1 Flag to one-off damage report header
 REM D4 ???
@@ -726,6 +729,25 @@ REM Enter <=0 to cancel.
 4350 PRINT"PHASERS LOCKED ON TARGET;  ";
 4360 PRINT"ENERGY AVAILABLE =";E;"UNITS"
 4370 INPUT"NUMBER OF UNITS TO FIRE";X:IFX<=0THEN1990
+
+REM Check for enough energy
+
+4400 IFE-X<0THEN4360
+
+REM Subtract from energy. If shields are damaged, multiply phaser energy
+REM by random factor [0..1).
+
+4410 E=E-X:IFD(7)<0THENX=X*RND(1)
+
+4450 H1=INT(X/K3):FORI=1TO3:IFK(I,3)<=0THEN4670
+4480 H=INT((H1/FND(0))*(RND(1)+2)):IFH>.15*K(I,3)THEN4530
+4500 PRINT"SENSORS SHOW NO DAMAGE TO ENEMY AT ";K(I,1);",";K(I,2):GOTO4670
+4530 K(I,3)=K(I,3)-H:PRINTH;"UNIT HIT ON KLINGON AT SECTOR";K(I,1);",";
+4550 PRINTK(I,2):IFK(I,3)<=0THENPRINT"*** KLINGON DESTROYED ***":GOTO4580
+4560 PRINT"   (SENSORS SHOW";K(I,3);"UNITS REMAINING)":GOTO4670
+4580 K3=K3-1:K9=K9-1:Z1=K(I,1):Z2=K(I,2):A$="   ":GOSUB8670
+4650 K(I,3)=0:G(Q1,Q2)=G(Q1,Q2)-100:Z(Q1,Q2)=G(Q1,Q2):IFK9<=0THEN6370
+4670 NEXTI:GOSUB6000:GOTO1990
 
 REM -- bookmark --
 
