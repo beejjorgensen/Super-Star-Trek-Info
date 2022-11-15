@@ -739,14 +739,64 @@ REM by random factor [0..1).
 
 4410 E=E-X:IFD(7)<0THENX=X*RND(1)
 
+REM Compute H1, the phaser energy divided by number of Klingons in
+REM quadrant.
+REM
+REM Loop through the existing Klingons
+
 4450 H1=INT(X/K3):FORI=1TO3:IFK(I,3)<=0THEN4670
+
+REM Compute H, the divided phaser energy divided by the distance to this
+REM Klingon.
+REM
+REM f = random number [2,3)
+REM d = distance to Klingon in question
+REM H = floor( (H1 / d) * f )   # H1 always non-negative
+REM
+REM If the H is over 15% of this Klingon's remaining energy, we'll print
+REM a damage message. Otherwise we'll print a no-damage message.
+
 4480 H=INT((H1/FND(0))*(RND(1)+2)):IFH>.15*K(I,3)THEN4530
+
+REM No damage, and loop to the next Klingon.
+
 4500 PRINT"SENSORS SHOW NO DAMAGE TO ENEMY AT ";K(I,1);",";K(I,2):GOTO4670
+
+REM Subtract H from this Klingon's energy level.
+
 4530 K(I,3)=K(I,3)-H:PRINTH;"UNIT HIT ON KLINGON AT SECTOR";K(I,1);",";
+
+REM If this Klingon's energy is <= 0, the Klingon is destroyed. Else
+REM we're going to print a message about how many units of energy they
+REM have remaining.
+
 4550 PRINTK(I,2):IFK(I,3)<=0THENPRINT"*** KLINGON DESTROYED ***":GOTO4580
+
 4560 PRINT"   (SENSORS SHOW";K(I,3);"UNITS REMAINING)":GOTO4670
+
+REM This line is hit if the Klingon is destroyed.
+REM
+REM Decrement K3, the number of Klingons in this quadrant.
+REM Decrement K9, the number of Klingons in the game.
+REM Clear the Klingon off the map (8670)
+
 4580 K3=K3-1:K9=K9-1:Z1=K(I,1):Z2=K(I,2):A$="   ":GOSUB8670
+
+REM Set this Klingon's energy to exactly 0 (it might have been
+REM negative).
+REM
+REM Remove the Klingon from the galactic map G and discovered map Z.
+REM
+REM If total Klingons in galaxy (K9) <= 0, game is won (6370).
+
 4650 K(I,3)=0:G(Q1,Q2)=G(Q1,Q2)-100:Z(Q1,Q2)=G(Q1,Q2):IFK9<=0THEN6370
+
+REM Loop to next Klingon
+REM
+REM Have Klingons fire weapons (6000)
+REM
+REM Jump back to top of main loop (1990)
+
 4670 NEXTI:GOSUB6000:GOTO1990
 
 REM -- bookmark --
