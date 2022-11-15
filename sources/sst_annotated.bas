@@ -12,7 +12,7 @@ REM      YELLOW = Energy less than 10% of starting energy
 REM      GREEN  = Otherwise
 REM      DOCKED = If within 1 space of a starbase (including diagonals).
 REM               This overrides all other conditions.
-REM C1 User input: ship course
+REM C1 User input: ship course, torpedo course
 REM D(8) Damaged Systems; negative means rough time to repair, >=0 means
 REM                       working.
 REM      1 = Warp engines
@@ -48,7 +48,7 @@ REM K9 total number of Klingons remaining in galaxy
 REM N Energy needed for warp maneuver
 REM N(3) Temporary holding in LRS for galactic scan data
 REM O1$ Row of dashed lines above and below SRS, LRS
-REM P photon torpedo count
+REM P Photon torpedo count
 REM P0 starting photon torpedo count???
 REM Q$ 2D string representing the sector, 8x3 spaces wide per row, 8x8x3 spaces
 REM Q1 Player current quadrant row [1,8]
@@ -67,6 +67,8 @@ REM T9 How many days to complete mission
 REM W1 User input: warp factor
 REM X$ Used for plural "S"
 REM X0$ Used for plural "IS"/"ARE"
+REM X3 Torpedo rounded sector row
+REM X4 Torpedo rounded sector column
 REM Z(8,8) Discovered map. If 0, undiscovered. Else a copy of G(r,c).
 REM Z$ 25 spaces, used to build Q$
 REM Z1 Sector position row temp variable in subroutine 8670
@@ -799,6 +801,133 @@ REM Jump back to top of main loop (1990)
 
 4670 NEXTI:GOSUB6000:GOTO1990
 
+REM Routine 4700: Photon Torpedos
+
+4690 REM PHOTON TORPEDO CODE BEGINS HERE
+
+REM If all torps used, back to top of main loop (1990)
+
+4700 IFP<=0THENPRINT"ALL PHOTON TORPEDOES EXPENDED":GOTO 1990
+
+REM If photon tubes damaged, say so, and back to main loop (1990)
+
+4730 IFD(5)<0THENPRINT"PHOTON TUBES ARE NOT OPERATIONAL":GOTO1990
+
+REM Get the torp course, wrapping 9 around to 1
+
+4760 INPUT"PHOTON TORPEDO COURSE (1-9)";C1:IFC1=9THENC1=1
+
+REM Validate course input, and back to main loop (1990) if incorrect
+REM data entered.
+
+4780 IFC1>=1ANDC1<9THEN4850
+4790 PRINT"ENSIGN CHEKOV REPORTS,  'INCORRECT COURSE DATA, SIR!'"
+4800 GOTO1990
+
+REM Compute like Enterprise course is computed (see above line 3110 for
+REM docs)
+REM
+REM    X1 = Row offset
+REM    X2 = Column offset
+REM
+REM Decrement energy (E) by 2.
+REM Decrement torpedo count (P) by 1.
+REM
+REM Set torp starting sector row (X) to Enterprise sector row (S1)
+REM Set torp starting sector col (Y) to Enterprise sector col (S2)
+
+4850 X1=C(C1,1)+(C(C1+1,1)-C(C1,1))*(C1-INT(C1)):E=E-2:P=P-1
+4860 X2=C(C1,2)+(C(C1+1,2)-C(C1,2))*(C1-INT(C1)):X=S1:Y=S2
+
+4910 PRINT"TORPEDO TRACK:"
+
+REM Add offsets to torp sector X,Y.
+REM Compute torp rounded position row X3 column X4.
+
+4920 X=X+X1:Y=Y+X2:X3=INT(X+.5):Y3=INT(Y+.5)
+
+REM Test for out of bounds--if so, go to "torpedo missed" (5490)
+
+4960 IFX3<1ORX3>8ORY3<1ORY3>8THEN5490
+
+REM Print current torp rounded position (X3,Y3).
+REM
+REM Check if torp non-rounded position is blank on the map (8830). Note that
+REM 8830 will round Z1 and Z2, so the comparison is still against the
+REM rounded position.
+REM
+REM I probably would have `Z1=X3` for code clarity here, but hey, this
+REM way saves 2 bytes.
+
+5000 PRINT"               ";X3;",";Y3:A$="   ":Z1=X:Z2=Y:GOSUB8830
+
+REM If the torp rounded sector is blank, continue running the track.
+
+5050 IFZ3<>0THEN4920
+
+REM Start checking for hitting things. First test for Klingon hits.
+REM
+REM See if the sector contains a Klingon--if not, skip over to the next
+REM test.
+
+5060 A$="+K+":Z1=X:Z2=Y:GOSUB8830:IFZ3=0THEN5210
+
+REM Sector contains a Klingon!
+REM
+REM Decrement number of Klingons in quadrant (K3).
+REM Decrement number of Klingons in game (K9).
+REM
+REM Test for winning the game--if so, jump to game won (6370)
+
+5110 PRINT"*** KLINGON DESTROYED ***":K3=K3-1:K9=K9-1:IFK9<=0THEN6370
+
+REM We need to figure out which Klingon in the K() array got destroyed
+REM so we can set its energy to 0 to remove it.
+REM
+REM Loop through looking for the Klingon in the same sector as the torp.
+
+5150 FORI=1TO3:IFX3=K(I,1)ANDY3=K(I,2)THEN5190
+5180 NEXTI:I=3
+
+REM Set the energy to 0 and jump to clean out the quadrant and SRS and
+REM go back to main loop (5430).
+
+5190 K(I,3)=0:GOTO5430
+
+REM Test to see if the torp hit a star.
+
+5210 A$=" * ":Z1=X:Z2=Y:GOSUB8830:IFZ3=0THEN5280
+
+REM Print message, have Klingons fire (6000), back to top of main (1990)
+
+5260 PRINT"STAR AT";X3;",";Y3;"ABSORBED TORPEDO ENERGY.":GOSUB6000:GOTO1990
+
+REM Test to see if we hit a starbase. If we missed, jump back to
+REM input a new torp course (???). This goto doesn't really make sense,
+REM but it's a should-never-happen situation.
+REM
+REM Logic:
+REM
+REM If the torp is in an empty sector
+REM     Continue to the next torp sector
+REM
+REM Else (it's a non empty sector)
+REM 
+REM     If the sector contains a Klingon, destroy it, end torp.
+REM
+REM     Else if the sector contains a star, end torp.
+REM
+REM     Else if the sector contains a starbase, fire the captain, end torp.
+REM
+REM     Else jump back to input a new torp course.
+REM
+REM However, since the sector can **only** contain nothing, a klingon,
+REM a star, or a starbase, the final else will never be hit.
+REM
+REM It should probably be an assert.
+
+5280 A$=">!<":Z1=X:Z2=Y:GOSUB8830:IFZ3=0THEN4760
+
 REM -- bookmark --
 
 REM Subroutine 6000: Klingons shooting
@@ -994,6 +1123,8 @@ REM G2$ = The device name
 
 REM Subroutine 8830: Sector Comparison
 REM
+REM Note that the row and column are rounded for the comparison
+REM
 REM Input:
 REM
 REM Z1 = Sector row
@@ -1003,6 +1134,8 @@ REM
 REM Output:
 REM
 REM Z = 0 if the string doesn't match the sector contents, 1 if it does
+REM Z1 = Rounded sector row
+REM Z2 = Rounded sector column
 
 8820 REM STRING COMPARISON IN QUADRANT ARRAY
 8830 Z1=INT(Z1+.5):Z2=INT(Z2+.5):S8=(Z2-1)*3+(Z1-1)*24+1:Z3=0
