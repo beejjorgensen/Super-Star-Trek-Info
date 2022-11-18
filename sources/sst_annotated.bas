@@ -928,6 +928,67 @@ REM It should probably be an assert.
 
 5280 A$=">!<":Z1=X:Z2=Y:GOSUB8830:IFZ3=0THEN4760
 
+REM Print the bad news.
+REM
+REM Decrement the number of starbases in this quadrant (B3)
+REM Decrement the number of starbases in the game (B9)
+
+5330 PRINT"*** STARBASE DESTROYED ***":B3=B3-1:B9=B9-1
+
+REM Compute:
+REM    x = T - T0 - T9
+REM    x = current_sd - starting_sd - date_count_in_mission
+REM
+REM If there are still any starbases (B9) left in the game OR
+REM    the number of Klingons (K9) in the game is more than x
+REM Then
+REM    jump over the getting relieved of duty block.
+REM
+REM BUG?
+REM
+REM I don't understand this code. I think K9 is always non-negative and
+REM x is always negative, so the condition would always be true.
+REM
+REM The goal seems to be that if the number of Klingons is more than the
+REM number of remaining stardates, you get relieved of command.
+REM
+REM The Osborne port changes this line to:
+REM
+REM 5360 IF B9>0 OR K9<T0+T9-T THEN 5400
+REM
+REM That is, if the number of Klingons in the game is less than the
+REM ending stardate minute the current stardate, then we're not
+REM relieved.
+REM
+REM That is, if the number of Klingons in the game is less than the
+REM number of stardates remaining in the game, then we're not relieved.
+REM
+REM This seems like a reasonable interpretation.
+
+5360 IFB9>0ORK9>T-T0-T9THEN5400
+
+REM Relieved. Jump to end of game summary about number of Klingons
+REM (6270)
+
+5370 PRINT"THAT DOES IT, CAPTAIN!!  YOU ARE HEREBY RELIEVED OF COMMAND"
+5380 PRINT"AND SENTENCED TO 99 STARDATES AT HARD LABOR ON CYGNUS 12!!"
+5390 GOTO 6270
+
+REM Starfleet command kicks you out of dock (D0) while they plot.
+
+5400 PRINT"STARFLEET COMMAND REVIEWING YOUR RECORD TO CONSIDER"
+5410 PRINT"COURT MARTIAL!":D0=0
+
+REM Remove ex-starbase from SRS map
+
+5430 Z1=X:Z2=Y:A$="   ":GOSUB8670
+
+REM Set the correct counts in the galactic map G() and discovered map
+REM Z(). Let the Klingons take a shot (6000). Then back to main loop
+REM (1990).
+
+5470 G(Q1,Q2)=K3*100+B3*10+S3:Z(Q1,Q2)=G(Q1,Q2):GOSUB6000:GOTO1990
+
 REM -- bookmark --
 
 REM Subroutine 6000: Klingons shooting
