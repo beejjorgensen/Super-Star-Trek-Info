@@ -989,6 +989,31 @@ REM (1990).
 
 5470 G(Q1,Q2)=K3*100+B3*10+S3:Z(Q1,Q2)=G(Q1,Q2):GOSUB6000:GOTO1990
 
+REM We get here if the torpedo goes out of the quadrant. Let the
+REM Klingons take a shot (6000). Then back to main loop (1990).
+
+5490 PRINT"TORPEDO MISSED":GOSUB6000:GOTO1990
+
+REM Routine 5530: Shield Control
+REM
+REM Inputs:
+REM
+REM Outputs:
+
+5520 REM SHIELD CONTROL
+
+REM Check to make sure shields are working, else back to main loop
+REM (1990).
+
+5530 IFD(7)<0THENPRINT"SHIELD CONTROL INOPERABLE":GOTO1990
+
+5560 PRINT"ENERGY AVAILABLE =";E+S;:INPUT"NUMBER OF UNITS TO SHIELDS";X
+
+REM If we want less than 0 shield energy, or shields are already at this
+REM level, report them unchanged and go back to main loop (1990).
+
+5580 IFX<0ORS=XTHENPRINT"<SHIELDS UNCHANGED>":GOTO1990
+
 REM -- bookmark --
 
 REM Subroutine 6000: Klingons shooting
