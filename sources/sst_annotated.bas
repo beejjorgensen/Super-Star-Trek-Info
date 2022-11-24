@@ -25,7 +25,8 @@ REM      7 = Shield Control
 REM      8 = Library-Computer
 REM D0 1 if docked, 0 if not
 REM D1 Flag to one-off damage report header
-REM D4 ???
+REM D3 Temporary variable used in repair time computation
+REM D4 Repair overhead time
 REM D6 ???
 REM E energy
 REM E0 starting energy
@@ -53,7 +54,7 @@ REM P0 starting photon torpedo count???
 REM Q$ 2D string representing the sector, 8x3 spaces wide per row, 8x8x3 spaces
 REM Q1 Player current quadrant row [1,8]
 REM Q2 Player current quadrant column [1,8]
-REM R1 General random number holder
+REM R1 General random number holder, general damage index
 REM S Shield energy level
 REM S1 Player current sector row [1,8]
 REM S2 Player current sector column [1,8]
@@ -65,6 +66,7 @@ REM T0 Starting stardate
 REM T8 Time we're going to advance the stardate
 REM T9 How many days to complete mission
 REM W1 User input: warp factor
+REM X General variable, input energy to sheilds
 REM X$ Used for plural "S"
 REM X0$ Used for plural "IS"/"ARE"
 REM X3 Torpedo rounded sector row
@@ -340,7 +342,7 @@ REM Set K3 (number of Klingons) to 0
 REM Set B3 (number of starbases) to 0
 REM Set S3 (number of stars) to 0
 REM Set G5 (flag for Roman numerals in quadrant names) to "Do add Roman numerals"
-REM Set D4 (???) to a random number between 0 and .5
+REM Set D4 (repair overhead time) to a random number between 0 and .5
 REM Set Z to G at this quadrant to mark it "discovered"
 
 1320 Z4=Q1:Z5=Q2:K3=0:B3=0:S3=0:G5=0:D4=.5*RND(1):Z(Q1,Q2)=G(Q1,Q2)
@@ -998,7 +1000,18 @@ REM Routine 5530: Shield Control
 REM
 REM Inputs:
 REM
+REM E = non-shield energy
+REM S = shield-energy
+REM D(7) = shield damage status
+REM
+REM User Input:
+REM
+REM X = new desired shield level
+REM
 REM Outputs:
+REM
+REM E = new non-shield energy level
+REM S = new shield energy level
 
 5520 REM SHIELD CONTROL
 
@@ -1013,6 +1026,111 @@ REM If we want less than 0 shield energy, or shields are already at this
 REM level, report them unchanged and go back to main loop (1990).
 
 5580 IFX<0ORS=XTHENPRINT"<SHIELDS UNCHANGED>":GOTO1990
+
+REM If the requested level is less than the total available, jump to
+REM success.
+
+5590 IFX<=E+STHEN5630
+
+REM Else we've asked for too much
+
+5600 PRINT"SHIELD CONTROL REPORTS  'THIS IS NOT THE FEDERATION TREASURY.'"
+5610 PRINT"<SHIELDS UNCHANGED>":GOTO1990
+
+REM Success, set the shields.
+REM
+REM E = non-shield energy
+REM S = shield energy
+REM X = new shield level
+REM tse = Total Ship Energy = E + S
+REM
+REM E = tse - X
+REM S = X
+REM
+REM This effectively performs these steps to set the shields to a new
+REM value:
+REM
+REM 1. Move all shield energy back into ship energy.
+REM 2. Subtract X from ship energy.
+REM 3. Set shield energy to X
+
+5630 E=E+S-X:S=X:PRINT"DEFLECTOR CONTROL ROOM REPORT:"
+
+REM Interestingly, the presentation is integer, but this implies it's
+REM fine to use decimal values for shield levels.
+REM
+REM Does it ever make sense to do so?
+
+5660 PRINT"  'SHIELDS NOW AT";INT(S);"UNITS PER YOUR COMMAND.'":GOTO1990
+
+REM Routine 5690: Damage Control
+REM
+REM Input:
+REM
+REM D() = damage status of all systems
+REM D0 = docked status
+REM D4 = repair overhead time
+REM
+REM Output:
+REM
+REM None
+
+5680 REM DAMAGE CONTROL
+
+REM If damage control is undamaged, proceed to print the repair status.
+
+5690 IFD(6)>=0THEN5910
+
+REM If not docked, there's nothing more to do. Back to main loop (1990).
+
+5700 PRINT"DAMAGE CONTROL REPORT NOT AVAILABLE":IFD0=0THEN1990
+
+REM Compute time to repair in stardates (D3)
+REM
+REM n = count of damaged systems
+REM D3 = n * 0.1
+REM
+REM If time to repair is 0, there's nothing to do, back to main loop
+REM (1990).
+
+5720 D3=0:FORI=1TO8:IFD(I)<0THEND3=D3+.1
+5760 NEXTI:IFD3=0THEN1990
+
+REM Add repair overhead time (D4)
+REM Clamp D3 at 0.9--it won't take more than 0.9 stardates to repair
+
+5780 PRINT:D3=D3+D4:IFD3>=1THEND3=.9
+
+REM Print time to repair rounded to 2 decimal places.
+
+5810 PRINT"TECHNICIANS STANDING BY TO EFFECT REPAIRS TO YOUR SHIP;"
+5820 PRINT"ESTIMATED TIME TO REPAIR:";.01*INT(100*D3);"STARDATES"
+5840 INPUT"WILL YOU AUTHORIZE THE REPAIR ORDER (Y/N)";A$
+5860 IFA$<>"Y"THEN 1990
+
+REM Repair all systems.
+REM
+REM Only set to 0 if less than 0? Is it ever possible for systems to
+REM have positive repair times (i.e. they're more than 100% repaired)?
+
+5870 FORI=1TO8:IFD(I)<0THEND(I)=0
+
+REM Advance current stardate by repair time (D3) plus 0.1.
+
+5890 NEXTI:T=T+D3+.1
+
+REM Print out repair state of all systems, rounded to two decimal
+REM places.
+REM
+REM Subroutine 8790 retrieves device number R1's name into string G2$.
+
+5910 PRINT:PRINT"DEVICE             STATE OF REPAIR":FORR1=1TO8
+5920 GOSUB8790:PRINTG2$;LEFT$(Z$,25-LEN(G2$));INT(D(R1)*100)*.01
+5950 NEXTR1:PRINT:IFD0<>0THEN5720
+
+REM Back to main loop
+
+5980 GOTO 1990
 
 REM -- bookmark --
 
