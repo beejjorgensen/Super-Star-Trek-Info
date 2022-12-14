@@ -165,6 +165,16 @@ REM executed. Execution is resumed by issuing a CONT command.
 REM `INP(I)`: Returns the byte read from port I. I must be in the range
 REM 0 to 255.
 
+REM `NULL <integer expression>`
+REM
+REM To set the number of nulls to be printed at the end of each line.
+REM
+REM For 10-character-per-second tape punches, <integer expression>
+REM should be >=3. When tapes are not being punched, <integer
+REM expression> should be 0 or 1 for Teletypes and Teletype-compatible
+REM CRTs. <integer expression> should be 2 or 3 for 30 cps hard copy
+REM printers. The default value is 0.
+
 10 REM SUPER STARTREK - MAY 16,1978 - REQUIRES 24K MEMORY
 30 REM
 40 REM ****        **** STAR TREK ****        ****
@@ -1319,6 +1329,101 @@ REM If short range sensors damanged, skip output
 7180 PRINT"        SHIELDS           ";INT(S):GOTO7260
 7240 PRINT"        KLINGONS REMAINING";INT(K9)
 7260 NEXTI:PRINTO1$:RETURN
+
+REM Routine 7290: Library Computer
+REM
+REM Inputs:
+REM
+REM D(8) = damage level of library computer
+REM
+REM Outputs:
+REM
+REM A = Input by user, 0-5 to select function
+REM H8 = 1 to print galactic record, 0 to print galaxy region names
+REM G5 = for sub 9030 to get the region name, set to 1
+
+7280 REM LIBRARY COMPUTER CODE
+
+REM If computer damaged, back to main game loop (1990)
+
+7290 IFD(8)<0THENPRINT"COMPUTER DISABLED":GOTO1990
+
+REM If negative, bail out back to main game loop (1990)
+
+7320 INPUT"COMPUTER ACTIVE AND AWAITING COMMAND";A:IFA<0THEN1990
+7350 PRINT:H8=1:ONA+1GOTO7540,7900,8070,8500,8150,7400
+
+REM If any invalid value is entered, print usage:
+
+7360 PRINT"FUNCTIONS AVAILABLE FROM LIBRARY-COMPUTER:"
+7370 PRINT"   0 = CUMULATIVE GALACTIC RECORD"
+7372 PRINT"   1 = STATUS REPORT"
+7374 PRINT"   2 = PHOTON TORPEDO DATA"
+7376 PRINT"   3 = STARBASE NAV DATA"
+7378 PRINT"   4 = DIRECTION/DISTANCE CALCULATOR"
+7380 PRINT"   5 = GALAXY 'REGION NAME' MAP":PRINT:GOTO7320
+
+7390 REM SETUP TO CHANGE CUM GAL RECORD TO GALAXY MAP
+
+REM ???
+
+7400 H8=0:G5=1:PRINT"                        THE GALAXY":GOTO7550
+
+REM Function 0: Cumulative Galactic Record
+
+7530 REM CUM GALACTIC RECORD
+
+7540 INPUT"DO YOU WANT A HARDCOPY? IS THE TTY ON (Y/N)";A$
+
+REM Apparently this port was first on a Data General Nova 800, but I
+REM can't find a memory map that gives meaning to these POKEs. Clearly
+REM something about getting a hardcopy.
+REM
+REM `NULL1` means end each line with 1 nul character.
+
+7542 IFA$="Y"THENPOKE1229,2:POKE1237,3:NULL1
+7543 PRINT:PRINT"        ";
+7544 PRINT"COMPUTER RECORD OF GALAXY FOR QUADRANT";Q1;",";Q2
+7546 PRINT
+7550 PRINT"       1     2     3     4     5     6     7     8"
+7560 O1$="     ----- ----- ----- ----- ----- ----- ----- -----"
+
+REM For each row, let's print the dashes header and then the row
+REM contents.
+REM
+REM If this is the galactic record, print them from Z(), the
+REM discovered quadrant array. If we haven't discovered the quadrant
+REM yet, print `***`. Otherwise, print the 3 digit code.
+REM
+REM The 3 digit code has leading zeros prepended to it. (Computed with
+REM the RIGHT$ + 1000 code, below.)
+
+7570 PRINTO1$:FORI=1TO8:PRINTI;:IFH8=0THEN7740
+7630 FORJ=1TO8:PRINT"   ";:IFZ(I,J)=0THENPRINT"***";:GOTO7720
+7700 PRINTRIGHT$(STR$(Z(I,J)+1000),3);
+7720 NEXTJ:GOTO7850
+
+REM This is the block of code if H8=1, which means we're just printing
+REM the galactic map.
+REM
+REM We call 9030 to get the quadrant names.
+REM
+REM They're printed out in two columns. The left is centered in a field
+REM of width 15. The right in a field of width 39. They are printed with
+REM no intervening spaces.
+
+7740 Z4=I:Z5=1:GOSUB9030:J0=INT(15-.5*LEN(G2$)):PRINTTAB(J0);G2$;
+7800 Z5=5:GOSUB 9030:J0=INT(39-.5*LEN(G2$)):PRINTTAB(J0);G2$;
+
+REM Whether we're printing the galactic record or the quadrant names, we
+REM end up here to finish the outer row loop, then turn off the hard
+REM copy.
+
+7850 PRINT:PRINTO1$:NEXTI:PRINT:POKE1229,0:POKE1237,1:NULL0:GOTO1990
+
+7890 REM STATUS REPORT
+
+REM --bookmark--
 
 REM Subroutine 8590: Find empty sector in quadrant
 REM
