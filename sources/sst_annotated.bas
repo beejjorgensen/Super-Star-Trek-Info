@@ -44,7 +44,7 @@ REM        K(x,2) = Klingon x sector column
 REM        K(x,3) = Klingon energy level??? Indicates Klingon not
 REM                 present in sector if positive.
 REM K3 the number of Klingons in this quadrant
-REM K7 ??? Gets initted to K9 after galaxy setup
+REM K7 total number of Klingons originally in galaxy
 REM K9 total number of Klingons remaining in galaxy
 REM N Energy needed for warp maneuver
 REM N(3) Temporary holding in LRS for galactic scan data
@@ -307,8 +307,8 @@ REM    Move Enterprise to another random quadrant.
 
 1100 IFB9<>0THEN1200
 
-REM If the quadrant has less than 2 klingons, add a klingon to the
-REM quadrant. Increment the total number of klingons.
+REM If the quadrant has less than 2 Klingons, add a Klingon to the
+REM quadrant. Increment the total number of Klingons.
 
 1150 IFG(Q1,Q2)<200THENG(Q1,Q2)=G(Q1,Q2)+100:K9=K9+1
 
@@ -320,8 +320,9 @@ REM Then move Enterprise to a new random quadrant.
 
 1160 B9=1:G(Q1,Q2)=G(Q1,Q2)+10:Q1=FNR(1):Q2=FNR(1)
 
-REM Set K7??? to number of klingons. If the number of bases isn't 1, set
-REM up the pluralization variables X$ and X0$.
+REM Set number of Klingons originally in galaxy (K7) to number of
+REM Klingons. If the number of bases isn't 1, set up the pluralization
+REM variables X$ and X0$.
 
 1200 K7=K9:IFB9<>1THENX$="S":X0$=" ARE "
 1230 PRINT"YOUR ORDERS ARE AS FOLLOWS:"
@@ -923,7 +924,7 @@ REM     Else if the sector contains a starbase, fire the captain, end torp.
 REM
 REM     Else jump back to input a new torp course.
 REM
-REM However, since the sector can **only** contain nothing, a klingon,
+REM However, since the sector can **only** contain nothing, a Klingon,
 REM a star, or a starbase, the final else will never be hit.
 REM
 REM It should probably be an assert.
@@ -1132,8 +1133,6 @@ REM Back to main loop
 
 5980 GOTO 1990
 
-REM -- bookmark --
-
 REM Subroutine 6000: Klingons shooting
 REM
 REM Inputs:
@@ -1209,6 +1208,66 @@ REM    additional_damage = -(H / S + r)
 6140 R1=FNR(1):D(R1)=D(R1)-H/S-.5*RND(1):GOSUB8790
 6170 PRINT"DAMAGE CONTROL REPORTS '";G2$;" DAMAGED BY THE HIT'"
 6200 NEXTI:RETURN
+
+REM Routine 6220: Game Over, time out
+REM Routine 6240: Game OVer, Enterprise destroyed
+REM
+REM Inputs:
+REM
+REM T = current stardate
+REM B9 = total number of starbases
+REM
+REM Outputs:
+REM
+REM A$ = "AYE" if the user elected to play again
+
+6210 REM END OF GAME
+
+6220 PRINT"IT IS STARDATE";T:GOTO 6270
+6240 PRINT:PRINT"THE ENTERPRISE HAS BEEN DESTROYED.  THE FEDERATION ";
+6250 PRINT"WILL BE CONQUERED":GOTO 6220
+6270 PRINT"THERE WERE";K9;"KLINGON BATTLE CRUISERS LEFT AT"
+6280 PRINT"THE END OF YOUR MISSION."
+
+REM If there are no more starbases, the game ends with no chance to
+REM continue play.
+
+6290 PRINT:PRINT:IFB9=0THEN6360
+
+6310 PRINT"THE FEDERATION IS IN NEED OF A NEW STARSHIP COMMANDER"
+6320 PRINT"FOR A SIMILAR MISSION -- IF THERE IS A VOLUNTEER,"
+
+REM If a rematch, start over from scratch.
+
+6330 INPUT"LET HIM STEP FORWARD AND ENTER 'AYE'";A$:IFA$="AYE"THEN10
+
+6360 END
+
+REM Routine 6370: Victory
+REM
+REM Input:
+REM
+REM T = current stardate
+REM T0 = stardate at start of mission
+REM K7 = number of Klingons originally in galaxy
+
+REM "CONGRULATION" [sic]
+
+6370 PRINT"CONGRULATION, CAPTAIN!  THE LAST KLINGON BATTLE CRUISER"
+6380 PRINT"MENACING THE FEDERATION HAS BEEN DESTROYED.":PRINT
+
+REM Efficiency is:
+REM
+REM days_elapsed = T - T0
+REM klingons_per_day = K7 / days_elapsed
+REM
+REM efficiency = 1000 * klingons_per_day**2
+REM
+REM I have no idea the rationale.
+REM
+REM After this is computed, possibly ask for a rematch (6290).
+
+6400 PRINT"YOUR EFFICIENCY RATING IS";1000*(K7/(T-T0))^2:GOTO6290
 
 REM Subroutine 6430: Short Range Sensor Scan
 REM
