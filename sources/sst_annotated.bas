@@ -1423,6 +1423,33 @@ REM copy.
 
 7890 REM STATUS REPORT
 
+7900 PRINT "   STATUS REPORT:":X$="":IFK9>1THENX$="S"
+7940 PRINT"KLINGON";X$;" LEFT: ";K9
+
+REM Computing stardates remaining:
+REM
+REM T0 = starting date, T9 = days in mission, T = current date
+REM end_date = T0 + T9
+REM days_remaining = end_date - T, rounded down to 1 decimal place
+
+7960 PRINT"MISSION MUST BE COMPLETED IN";.1*INT((T0+T9-T)*10);"STARDATES"
+
+REM Print starbases remaining, or skip to berating message if 0 remaining
+
+7970 X$="S":IFB9<2THENX$="":IFB9<1THEN8010
+7980 PRINT"THE FEDERATION IS MAINTAINING";B9;"STARBASE";X$;" IN THE GALAXY"
+
+REM Call damage control routine to append that information to the
+REM report (5690).
+
+7990 GOTO5690
+
+REM We get here in the status report if there are no starbases left.
+REM Berate the player and then jump to the damage report (5690).
+
+8010 PRINT"YOUR STUPIDITY HAS LEFT YOU ON YOUR ON IN"
+8020 PRINT"  THE GALAXY -- YOU HAVE NO STARBASES LEFT!":GOTO5690
+
 REM --bookmark--
 
 REM Subroutine 8590: Find empty sector in quadrant
