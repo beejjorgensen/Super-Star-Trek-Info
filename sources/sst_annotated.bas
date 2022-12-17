@@ -1505,10 +1505,10 @@ REM Shared code between torp data and D/D calculator
 
 REM X is column distance between Klingon and Enterprise
 REM This is positive if the Klingon column is greater.
-REM This is negative if the Enterprise column is greater.
+REM This is negative if the Klingon column is less.
 REM
 REM A is row distance between Enterprise and Klingon
-REM This is positive if the Enterprise row is greater.
+REM This is positive if the Klingon row is less.
 REM This is negative if the Klingon row is greater.
 REM
 REM WARNING: "A" gets repurposed on this line!
@@ -1586,6 +1586,31 @@ REM    E: 5 + dRow / dCol  ==> [5..6]
 REM    F: 7 - dCol / dRow  ==> [6..7]
 REM    G: 7 + dCol / dRow  ==> [7..8]
 REM    H: 9 - dRow / dCol  ==> [8..9], should wrap 9 to 1
+REM
+REM    A: 1 +     dRow / dCol  ==> [1..2]
+REM    B: 2 + 1 - dCol / dRow  ==> [2..3]
+REM    C: 3 +     dCol / dRow  ==> [3..4]
+REM    D: 4 + 1 - dRow / dCol  ==> [4..5]
+REM    E: 5 +     dRow / dCol  ==> [5..6]
+REM    F: 6 + 1 - dCol / dRow  ==> [6..7]
+REM    G: 7 +     dCol / dRow  ==> [7..8]
+REM    H: 8 + 1 - dRow / dCol  ==> [8..9], should wrap 9 to 1
+REM
+REM    If dCol > dRow:
+REM       ADEH
+REM
+REM       if (col > ent_col)
+REM             AH
+REM             if (row > ent_row)
+REM                 H
+REM             else
+REM                 A
+REM       else
+REM             DE
+REM             if (row > ent_row)
+REM                 E
+REM             else
+REM                 D
 
 8220 X=X-A:A=C1-W1:IFX<0THEN8350
 
@@ -1595,7 +1620,13 @@ REM    H: 9 - dRow / dCol  ==> [8..9], should wrap 9 to 1
 8280 C1=1
 
 8290 IFABS(A)<=ABS(X)THEN8330
+
+REM This code handles Areas B (C1=1) and F (C1=5)
+
 8310 PRINT"DIRECTION =";C1+(((ABS(A)-ABS(X))+ABS(A))/ABS(A)):GOTO8460
+
+REM This code handles Areas A (C1=1) and E (C1=5)
+
 8330 PRINT"DIRECTION =";C1+(ABS(A)/ABS(X)):GOTO8460
 
 8350 IFA>0THENC1=3:GOTO8420
@@ -1604,8 +1635,16 @@ REM    H: 9 - dRow / dCol  ==> [8..9], should wrap 9 to 1
 8410 C1=7
 
 8420 IFABS(A)>=ABS(X)THEN8450
+
+REM This computes Area D (C1=3) and H (C1=7)
+
 8430 PRINT"DIRECTION =";C1+(((ABS(X)-ABS(A))+ABS(X))/ABS(X)):GOTO8460
+
+REM This computes Area C (C1=3) and G (C1=7)
+
 8450 PRINT"DIRECTION =";C1+(ABS(X)/ABS(A))
+
+REM That wasn't such a chore, now, was it?
 
 8460 PRINT"DISTANCE =";SQR(X^2+A^2):IFH8=1THEN1990
 8480 NEXTI:GOTO1990
