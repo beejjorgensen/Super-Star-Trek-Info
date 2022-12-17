@@ -1365,7 +1365,12 @@ REM If any invalid value is entered, print usage:
 
 7390 REM SETUP TO CHANGE CUM GAL RECORD TO GALAXY MAP
 
-REM ???
+REM Set up for printing the map of the galaxy
+REM
+REM H8=0 Indicates we're not printing the record, we're printing the map
+REM G5=1 For subroutine 9030: Get Quadrant Name (without Roman numerals)
+REM
+REM Jumps to map header output (7550)
 
 7400 H8=0:G5=1:PRINT"                        THE GALAXY":GOTO7550
 
@@ -1391,7 +1396,7 @@ REM `NULL1` means end each line with 1 nul character.
 REM For each row, let's print the dashes header and then the row
 REM contents.
 REM
-REM If this is the galactic record, print them from Z(), the
+REM If this is the galactic record (H8=1), print them from Z(), the
 REM discovered quadrant array. If we haven't discovered the quadrant
 REM yet, print `***`. Otherwise, print the 3 digit code.
 REM
@@ -1401,6 +1406,10 @@ REM the RIGHT$ + 1000 code, below.)
 7570 PRINTO1$:FORI=1TO8:PRINTI;:IFH8=0THEN7740
 7630 FORJ=1TO8:PRINT"   ";:IFZ(I,J)=0THENPRINT"***";:GOTO7720
 7700 PRINTRIGHT$(STR$(Z(I,J)+1000),3);
+
+REM After this inner loop (J), jump to the end of the outer loop (I)
+REM (7850). This skips over the code that outputs the map.
+
 7720 NEXTJ:GOTO7850
 
 REM This is the block of code if H8=1, which means we're just printing
@@ -1464,8 +1473,25 @@ REM (4720), which subsequently jumps back to the main game loop.
 REM "CRUSER" [sic]
 
 8090 PRINT"FROM ENTERPRISE TO KLINGON BATTLE CRUSER";X$
+
+REM In this context, H8=0 if we're looking at Klingons, H8=1 if we're
+REM just doing direction/distance. The latter case causes the loop to
+REM bail out early.
+
+REM For each Klingon that's active in the quadrant...
+
 8100 H8=0:FORI=1TO3:IFK(I,3)<=0THEN8480
+
+REM W1 = Klingon row
+REM X  = Klingon column
+
 8110 W1=K(I,1):X=K(I,2)
+
+REM C1 = Enterprise Sector row
+REM A  = Enterprise Sector column
+REM
+REM Jump to common D/D code (8220)
+
 8120 C1=S1:A=S2:GOTO8220
 
 REM LC Routine 8150: Distance/Direction calculator
@@ -1477,17 +1503,106 @@ REM LC Routine 8150: Distance/Direction calculator
 
 REM Shared code between torp data and D/D calculator
 
+REM X is column distance between Klingon and Enterprise
+REM This is positive if the Klingon column is greater.
+REM This is negative if the Enterprise column is greater.
+REM
+REM A is row distance between Enterprise and Klingon
+REM This is positive if the Enterprise row is greater.
+REM This is negative if the Klingon row is greater.
+REM
+REM WARNING: "A" gets repurposed on this line!
+REM
+REM This code is hideous and I'm not sure I can fully follow it.
+REM
+REM But I can follow it enough to see that what's happening here is
+REM we've split the space up into 8 areas, labeled below A-H:
+REM
+REM     4      3      2
+REM      +-----+-----+
+REM      |\    |    /|
+REM      | \ C | B / |
+REM      |  \  |  /  |
+REM      | D \ | / A |
+REM      |    \|/    |
+REM    5 +----<*>----+ 1,9
+REM      |    /|\    |
+REM      | E / | \ H |
+REM      |  /  |  \  |
+REM      | / F | G \ |
+REM      |/    |    \|
+REM      +-----+-----+
+REM     6      7      8
+REM
+REM The corresponding navigation directions are along the outside.
+REM
+REM The Enterprise is at the center of this diagram.
+REM
+REM Let's determine, for example, that the Klingon (or other target) is
+REM in Area B.
+REM
+REM Let's also compute the difference in the row and column sectors
+REM between the Enterprise:
+REM
+REM   dRow = |EnterpriseRow - TargetRow|
+REM   dCol = |EnterpriseCol - TargetCol|
+REM
+REM We know that since we're in Area B, dCol <= dRow.
+REM
+REM If the target is on the (2) diagonal, then dCol == dRow.
+REM 
+REM If the target is on the (3) vertical, then dCol == 0.
+REM
+REM We can then take the ratio of dCol/dRow to interpolate between
+REM courses 2 and 3.
+REM
+REM This ratio will go between [1..0] as we move from course 2 to 3.
+REM
+REM So we could subtract it from 1 to change it to [0..1]:
+REM
+REM   1 - dCol / dRow  ==> [0..1]
+REM
+REM And then we could add 2 to it to map it to the range [2..3]:
+REM
+REM   2 + 1 - dCol / dRow  ==> [2..3]
+REM       3 - dCol / dRow  ==> [2..3]
+REM
+REM And there we have it. For Area B, the course is:
+REM
+REM       3 - dCol / dRow  ==> [2..3]
+REM
+REM The opposite Area F is similar, except we have to subtract it from
+REM 7:
+REM
+REM       7 - dCol / dRow  ==> [6..7]
+REM
+REM The mappings for each area are:
+REM
+REM    A: 1 + dRow / dCol  ==> [1..2]
+REM    B: 3 - dCol / dRow  ==> [2..3]
+REM    C: 3 + dCol / dRow  ==> [3..4]
+REM    D: 5 - dRow / dCol  ==> [4..5]
+REM    E: 5 + dRow / dCol  ==> [5..6]
+REM    F: 7 - dCol / dRow  ==> [6..7]
+REM    G: 7 + dCol / dRow  ==> [7..8]
+REM    H: 9 - dRow / dCol  ==> [8..9], should wrap 9 to 1
+
 8220 X=X-A:A=C1-W1:IFX<0THEN8350
+
 8250 IFA<0THEN8410
 8260 IFX>0THEN8280
 8270 IFA=0THENC1=5:GOTO8290
 8280 C1=1
+
 8290 IFABS(A)<=ABS(X)THEN8330
 8310 PRINT"DIRECTION =";C1+(((ABS(A)-ABS(X))+ABS(A))/ABS(A)):GOTO8460
 8330 PRINT"DIRECTION =";C1+(ABS(A)/ABS(X)):GOTO8460
+
 8350 IFA>0THENC1=3:GOTO8420
 8360 IFX<>0THENC1=5:GOTO8290
+
 8410 C1=7
+
 8420 IFABS(A)>=ABS(X)THEN8450
 8430 PRINT"DIRECTION =";C1+(((ABS(X)-ABS(A))+ABS(X))/ABS(X)):GOTO8460
 8450 PRINT"DIRECTION =";C1+(ABS(X)/ABS(A))
@@ -1500,8 +1615,6 @@ REM LC Routine 8500: Nav to starbase
 8500 IFB3<>0THENPRINT"FROM ENTERPRISE TO STARBASE:":W1=B4:X=B5:GOTO8120
 8510 PRINT"MR. SPOCK REPORTS,  'SENSORS SHOW NO STARBASES IN THIS";
 8520 PRINT" QUADRANT.'":GOTO1990
-
-REM --bookmark--
 
 REM Subroutine 8590: Find empty sector in quadrant
 REM
