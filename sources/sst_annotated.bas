@@ -1595,22 +1595,6 @@ REM    E: 5 +     dRow / dCol  ==> [5..6]
 REM    F: 6 + 1 - dCol / dRow  ==> [6..7]
 REM    G: 7 +     dCol / dRow  ==> [7..8]
 REM    H: 8 + 1 - dRow / dCol  ==> [8..9], should wrap 9 to 1
-REM
-REM    If dCol > dRow:
-REM       ADEH
-REM
-REM       if (col > ent_col)
-REM             AH
-REM             if (row > ent_row)
-REM                 H
-REM             else
-REM                 A
-REM       else
-REM             DE
-REM             if (row > ent_row)
-REM                 E
-REM             else
-REM                 D
 
 8220 X=X-A:A=C1-W1:IFX<0THEN8350
 
