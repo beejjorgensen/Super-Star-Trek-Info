@@ -23,7 +23,7 @@ This is a "clean room" description of the game.
 
 * [101 BASIC Computer Games, Microcomputer Edition](doc/sst_bcgmc.pdf)
 * [MBASIC-80 Reference Manual](doc/mbasic80_refman.pdf)
-* [Original SPACEWR from 101 BASIC Computer Games)](doc/spacewr_101bcg.pdf)
+* [Original SPACEWR from 101 BASIC Computer Games](doc/spacewr_101bcg.pdf)
 * [Game instructions text file](doc/instructions.txt)
 
 ## Source
