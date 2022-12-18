@@ -1,7 +1,17 @@
 # Super Star Trek
 
+```
+                ,------*------,
+,-------------   '---  ------'
+ '-------- --'      / /
+     ,---' '-------/ /--,
+      '----------------'
+
+THE USS ENTERPRISE --- NCC-1701
+```
+
 This is a reverse-engineering WIP to write a spec for the classic game
-Super Star Trek from _Basic Computer Games Microcomputer Edition_.
+Super Star Trek from _Basic Computer Games, Microcomputer Edition_.
 
 ## Specification
 
@@ -9,7 +19,14 @@ This is a "clean room" description of the game.
 
 * TODO
 
-## Sources
+## Documents
+
+* [101 BASIC Computer Games, Microcomputer Edition](doc/sst_bcgmc.pdf)
+* [MBASIC-80 Reference Manual](doc/mbasic80_refman.pdf)
+* [Original SPACEWR from 101 BASIC Computer Games)](doc/spacewr_101bcg.pdf)
+* [Game instructions text file](doc/instructions.txt)
+
+## Source
 
 This is the probably-completely-correct version as appeared in 101 BASIC
 Games Microcomputer Edition. It has been diffed against the version that
@@ -18,7 +35,7 @@ and compared against a physical copy of the book.
 
 All typos have been reproduced them faithfully from the source.
 
-* [Super Star Trek source](sources/sst.bas)
+* [**Super Star Trek source**](sources/sst.bas)
 * [Super Star Trek source, annotated](sources/sst_annotated.bas)
 
 Here are the instructions:
