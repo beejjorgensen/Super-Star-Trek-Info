@@ -214,17 +214,14 @@ REM "ORIGIONAL" [sic]
 
 330 DIM G(8,8),C(9,2),K(3,3),N(3),Z(8,8),D(8)
 
-REM Choose starting stardate (T) as a random integer between 120-140
-REM (inclusive??).
+REM Choose starting stardate (T) as a random integer between 2000-3900.
 REM Initialize starting stardate (T0) starting startdate in T.
 REM Initialize days to complete mission (T9) to an integer between 25
-REM and 35 (inclusive??).
+REM and 34.
 
 370 T=INT(RND(1)*20+20)*100:T0=T:T9=25+INT(RND(1)*10):D0=0:E=3000:E0=E
 
-REM The following B9 is hard to read in the source. It could be E9, but
-REM is very likely not.
-REM
+REM B9=number of starbases in galaxy
 REM P=10 Photon torpedoes to 10
 REM S=0 Shields to zero
 
@@ -302,7 +299,7 @@ REM 4% chance of 1 starbase
 REM Galactic map initialized to:
 REM    K3 Klingons
 REM    B3 Starbases
-REM    Random number [11,18] stars
+REM    Random number [1,8] stars
 REM
 REM If the total Klingons (K9) is greater than the number of days in
 REM this game (T9), set the number of days to the number of Klingons
@@ -348,7 +345,7 @@ REM INP(1) returns the byte from port 1, presumably stdin.
 
 1310 REM HERE ANY TIME NEW QUADRANT ENTERED
 
-REM Set Z4 (row) and Z5 (column) to random coordinates Q1,Q2
+REM Set Z4 (row) and Z5 (column) to Enterprise quadrant Q1,Q2
 REM Set K3 (number of Klingons) to 0
 REM Set B3 (number of starbases) to 0
 REM Set S3 (number of stars) to 0
