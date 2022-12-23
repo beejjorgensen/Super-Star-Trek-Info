@@ -67,6 +67,18 @@ For example row 5, column 6 is `ALDEBARAN II`.
 
 As the game begins, the following initialization takes place:
 
+* Print the welcome splash:
+
+  ```
+                                      ,------*------,
+                      ,-------------   '---  ------'
+                       '-------- --'      / /
+                           ,---' '-------/ /--,
+                            '----------------'
+  
+                      THE USS ENTERPRISE --- NCC-1701
+  ```
+
 * Choose the starting stardate.
 
   This is computed as a random integer in the range `[20,39]` multiplied
@@ -176,6 +188,19 @@ As the game begins, the following initialization takes place:
 
 * Print the introduction message.
 
+  ```
+  YOUR ORDERS ARE AS FOLLOWS:
+       DESTROY THE xx KLINGON WARSHIPS WHICH HAVE INVADED
+     THE GALAXY BEFORE THEY CAN ATTACK FEDERATION HEADQUARTERS
+     ON STARDATE yyyy  THIS GIVES YOU zz DAYS.  THERE ARE
+     ww STARBASES IN THE GALAXY FOR RESUPPLYING YOUR SHIP
+
+  HIT ANY KEY EXCEPT RETURN WHEN READY TO ACCEPT COMMAND
+  ```
+
+  > The BASIC code fixes the above message for plurality surrounding the
+  > starbases, but assumes the other numbers will be non-`1`.
+
 * Call the [Entering a New Quadrant](#entering-a-new-quadrant) code.
 
 ## Order of Play
@@ -186,5 +211,33 @@ TODO
 
 * Mark the quadrant as "discovered".
 
-* Print an "entering quadrant" message.
+* Print an "entering quadrant" message with the full quadrant name and
+  Roman numeral:
 
+  On first entry, this prints:
+
+  ```
+  YOUR MISSION BEGINS WITH YOUR STARSHIP LOCATED
+  IN THE GALACTIC QUADRANT, 'qqqqqqqq'.
+  ```
+
+  On subsequent entries, it prints:
+
+  ```
+  NOW ENTERING qqqqqqqq QUADRANT . . .
+  ```
+
+* If there are Klingons in the quadrant, print a combat warning message.
+
+  ```
+  COMBAT AREA      CONDITION RED
+  ```
+
+  * If Enterprise shield level is less than or equal to `200`, print a
+    warning message about shields being low.
+
+    ```
+       SHIELDS DANGEROUSLY LOW
+    ```
+
+TODO
