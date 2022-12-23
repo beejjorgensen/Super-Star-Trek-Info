@@ -208,7 +208,10 @@ As the game begins, the following initialization takes place:
 
 ## Order of Play
 
-TODO
+1. Initialize game.
+2. Begin main loop.
+3. Perform a Short Range Sensor Scan.
+4. TODO
 
 ## Entering a New Quadrant
 
@@ -243,4 +246,44 @@ TODO
        SHIELDS DANGEROUSLY LOW
     ```
 
-TODO
+* Clear the 8x8 grid representing the sectors in the Enterprise's
+  current quadrant.
+
+* Place the Enterprise in its current sector.
+
+* Look up the number of Klingons in this quadrant. Place that many in
+  random, empty sectors.
+ 
+* Assign each Klingon in the quadrant a random energy level in the range
+  `[100,300)`.
+
+* If there is a starbase in this quadrant, place it at a random, unused
+  sector.
+
+* Look up the number of stars in this quadrant. Place that many stars in
+  random unused sectors.
+
+## Short Range Sensors (SRS)
+
+* Determine if the Enterprise is docked.
+
+  The Enterprise is docked if it is adjacent to a starbase, including
+  diagonals.
+
+* If the Enterprise is docked:
+
+  * Set current energy level to maximum.
+  * Set photon torpedo count to maximum.
+  * Set shields to `0`.
+  * Print a shields message:
+    ```
+    SHIELDS DROPPED FOR DOCKING PURPOSES
+    ```
+
+* Determine the ship's battle condition:
+
+TODO line 6650
+
+
+
+
