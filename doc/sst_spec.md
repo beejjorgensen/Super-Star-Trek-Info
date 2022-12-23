@@ -200,6 +200,9 @@ As the game begins, the following initialization takes place:
 
   > The BASIC code fixes the above message for plurality surrounding the
   > starbases, but assumes the other numbers will be non-`1`.
+  >
+  > It is unclear why `RETURN` is not an acceptable key to hit, but the
+  > code actively ignores it.
 
 * Call the [Entering a New Quadrant](#entering-a-new-quadrant) code.
 
