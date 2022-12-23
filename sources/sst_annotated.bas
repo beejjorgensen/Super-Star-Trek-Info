@@ -391,6 +391,8 @@ REM Initialize Quadrant display string Q$ to 192 spaces (8x8x3)
 1660 REM POSITION ENTERPRISE IN QUADRANT, THEN PLACE "K3" KLINGONS, &
 1670 REM "B3" STARBASES, & "S3" STARS ELSEWHERE.
 
+REM Subroutine 8670 puts A$ in the array at row Z1, col Z2.
+
 1680 A$="<*>":Z1=S1:Z2=S2:GOSUB8670:IFK3<1THEN1820
 
 REM Set Klingon position and energy level ???
@@ -1644,8 +1646,8 @@ REM None
 REM
 REM Output:
 REM
-REM Z1 = Sector position row
-REM Z2 = Sector position column
+REM Z1 = R1 = Sector position row
+REM Z2 = R2 = Sector position column
 
 8580 REM FIND EMPTY PLACE IN QUADRANT (FOR THINGS)
 8590 R1=FNR(1):R2=FNR(1):A$="   ":Z1=R1:Z2=R2:GOSUB8830:IFZ3=0THEN8590
