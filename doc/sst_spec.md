@@ -321,11 +321,11 @@ As the game begins, the following initialization takes place:
   The actual sector contents will be 3 spaces each, and are as follows:
 
   |Value|Description|
-  |-----|-----------|
+  |:---:|-----------|
   |`<*>`|Enterprise |
   |`+K+`|Klingon    |
   |`>!<`|Starbase   |
-  |`  *  `|Star       |  <!-- Extra spaces for proper rendering to HTML -->
+  |` * `|Star       |
   |`   `|Empty space|
 
   The `STARDATE` is printed as an integer if it is a whole number.
