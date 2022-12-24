@@ -214,9 +214,17 @@ As the game begins, the following initialization takes place:
   HIT ANY KEY EXCEPT RETURN WHEN READY TO ACCEPT COMMAND
   ```
 
-  > The BASIC code fixes the above message for plurality surrounding the
-  > starbases, but assumes the other numbers will be non-`1`.
-  >
+  All values are assumed to be non-`1`, with the exception of the total
+  starbase count.
+
+  If the total starbase count is `1`, the output is correctly
+  singularized to
+
+  ```
+                                          [...] THERE IS
+     1 STARBASE IN THE GALAXY [...]
+  ```
+
   > It is unclear why `RETURN` is not an acceptable key to hit, but the
   > code actively ignores it.
 
