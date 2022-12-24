@@ -283,6 +283,9 @@ As the game begins, the following initialization takes place:
     SHIELDS DROPPED FOR DOCKING PURPOSES
     ```
 
+> Arguably, the above doesn't belong in the Short Range Sensor code, but
+> it's in there in the original source.
+
 * Determine the ship's battle condition:
 
   * If there are any Klingon's in the quadrant, the condition is
