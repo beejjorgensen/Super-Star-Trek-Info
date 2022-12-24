@@ -393,9 +393,12 @@ IS PRESENTLY INCAPABLE OF CROSS-CIRCUITING TO ENGINE ROOM!!
 ```
 
 > Note: in the output above, it feels like the intent might have been to
-> have the word `SPACE` on the first line, which would imply a semicolon
-> at the end of the first line. But no such thing is present in the
-> source.
+> have the word `SPACE` on the first line. This speculation is further
+> bolstered by the presence of an explicit space after the word `IN`,
+> and the fact that subsequent code suppresses newlines liberally as it
+> packs the source in 80-column lines. To fix this, a semicolon would
+> have to be added at the end of the first line. But no such thing is
+> present in the source.
 
 ## Execute User Command
 
