@@ -324,9 +324,9 @@ As the game begins, the following initialization takes place:
   |:---:|-----------|
   |`<*>`|Enterprise |
   |`+K+`|Klingon    |
-  |`>!<`|Starbase   |
-  |` * `|Star       |
-  |`   `|Empty space|
+  |`>!<`|Starbase   |  <!-- In order to get this rendered right,     -->
+  |` * `|Star       |  <!-- these are nonbreaking spaces in the star -->
+  |`   `|Empty space|  <!-- and empty space entries. UTF-8 0xA0.     -->
 
   The `STARDATE` is printed as an integer if it is a whole number.
   Otherwise it is printed with 1 digit past the decimal place.
