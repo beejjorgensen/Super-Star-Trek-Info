@@ -288,8 +288,8 @@ As the game begins, the following initialization takes place:
   * If there are any Klingon's in the quadrant, the condition is
     `*RED*`.
 
-  * Else if the Enterprise's energy is less than 10% of maximum, the
-    condition is `YELLOW`.
+  * Else if the Enterprise's energy (not counting shields) is less than
+    10% of maximum, the condition is `YELLOW`.
 
   * Else the condition is `GREEN`.
 
@@ -312,8 +312,8 @@ As the game begins, the following initialization takes place:
    ... xxx ... xxx ... xxx ... xxx        QUADRANT           q , q
    xxx ... xxx ... xxx ... xxx ...        SECTOR             s , s
    ... xxx ... xxx ... xxx ... xxx        PHOTON TORPEDOES   tt
-   xxx ... xxx ... xxx ... xxx ...        TOTAL ENERGY       ee
-   ... xxx ... xxx ... xxx ... xxx        SHIELDS            ss
+   xxx ... xxx ... xxx ... xxx ...        TOTAL ENERGY       eeee
+   ... xxx ... xxx ... xxx ... xxx        SHIELDS            ssss
    xxx ... xxx ... xxx ... xxx ...        KLINGONS REMAINING kk
   ---------------------------------
   ```
@@ -325,7 +325,7 @@ As the game begins, the following initialization takes place:
   |`<*>`|Enterprise |
   |`+K+`|Klingon    |
   |`>!<`|Starbase   |
-  |` * `|Star       |
+  |`  *  `|Star       |  <!-- Extra spaces for proper rendering to HTML -->
   |`   `|Empty space|
 
   The `STARDATE` is printed as an integer if it is a whole number.
