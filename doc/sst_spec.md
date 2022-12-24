@@ -63,7 +63,19 @@ For example row 5, column 6 is `ALDEBARAN II`.
     I   II  III IV  I   II  III IV
 ```
 
-## Setup
+## Order of Play
+
+* Initialization and setup:
+  * [Initialize game](#initialize-game).
+  * [Enter a New Quadrant](#entering-a-new-quadrant).
+* Start of Main Loop:
+  * Perform a [Short Range Sensor Scan](#short-range-sensor-scan).
+  * [Check for Out of Energy](#check-for-out-of-energy).
+  * [Execute User Command](#execute-user-command).
+
+TODO
+
+## Initialize Game
 
 As the game begins, the following initialization takes place:
 
@@ -204,15 +216,6 @@ As the game begins, the following initialization takes place:
   > It is unclear why `RETURN` is not an acceptable key to hit, but the
   > code actively ignores it.
 
-* Call the [Entering a New Quadrant](#entering-a-new-quadrant) code.
-
-## Order of Play
-
-1. Initialize game.
-2. Begin main loop.
-3. Perform a Short Range Sensor Scan.
-4. TODO
-
 ## Entering a New Quadrant
 
 * Mark the quadrant as "discovered".
@@ -263,7 +266,7 @@ As the game begins, the following initialization takes place:
 * Look up the number of stars in this quadrant. Place that many stars in
   random unused sectors.
 
-## Short Range Sensors (SRS)
+## Short Range Sensor Scan
 
 * Determine if the Enterprise is docked.
 
@@ -282,8 +285,139 @@ As the game begins, the following initialization takes place:
 
 * Determine the ship's battle condition:
 
-TODO line 6650
+  * If there are any Klingon's in the quadrant, the condition is
+    `*RED*`.
+
+  * Else if the Enterprise's energy is less than 10% of maximum, the
+    condition is `YELLOW`.
+
+  * Else the condition is `GREEN`.
 
 
+* If the Short Range Sensors are damaged, print a message and return
+  from the Short Range Sensors routine.
 
+  ```
+  *** SHORT RANGE SENSORS ARE OUT ***
+  ```
 
+* Otherwise, print out the Short Range Sensor Scan. The layout of the
+  screen is as follows, with filler `...` and `xxx` in the sector
+  positions, and filler values on the right:
+
+  ```
+  ---------------------------------
+   ... xxx ... xxx ... xxx ... xxx        STARDATE           ssss[.s]
+   xxx ... xxx ... xxx ... xxx ...        CONDITION          cccc
+   ... xxx ... xxx ... xxx ... xxx        QUADRANT           q , q
+   xxx ... xxx ... xxx ... xxx ...        SECTOR             s , s
+   ... xxx ... xxx ... xxx ... xxx        PHOTON TORPEDOES   tt
+   xxx ... xxx ... xxx ... xxx ...        TOTAL ENERGY       ee
+   ... xxx ... xxx ... xxx ... xxx        SHIELDS            ss
+   xxx ... xxx ... xxx ... xxx ...        KLINGONS REMAINING kk
+  ---------------------------------
+  ```
+
+  The actual sector contents will be 3 spaces each, and are as follows:
+
+  |Value|Description|
+  |-----|-----------|
+  |`<*>`|Enterprise |
+  |`+K+`|Klingon    |
+  |`>!<`|Starbase   |
+  |` * `|Star       |
+  |`   `|Empty space|
+
+  The `STARDATE` is printed as an integer if it is a whole number.
+  Otherwise it is printed with 1 digit past the decimal place.
+
+  All other numeric values are printed as truncated integers.
+
+  `TOTAL ENERGY` is the Enterprise's energy plus its shield energy.
+  `SHIELDS` is just the shield energy.
+
+  `KLINGONS REMAINING` is total Klingons in the game.
+
+  Example:
+
+  ```
+  ---------------------------------
+                                          STARDATE           3061.2
+        *          <*>                    CONDITION          *RED*
+                                          QUADRANT           7 , 1 
+                                          SECTOR             2 , 5
+                        *                 PHOTON TORPEDOES   3
+           >!<                            TOTAL ENERGY       1929
+                           +K+            SHIELDS            430
+                                          KLINGONS REMAINING 6
+  ---------------------------------
+  ```
+
+## Check for Out Of Energy
+
+Note that the total energy in the Enterprise is the energy level plus
+the shield energy level. (Energy can be moved from main energy to
+shields and back).
+
+If the Enterprise's total energy (shields + energy) is `10` or lower,
+the Enterprise is out of power.
+
+If the total energy is greater than `10`, but the energy alone is `10`
+or lower AND shield control is damaged, the Enterprise is out of power.
+
+If the Enterprise is out of power, print a message (below), then jump to
+[Game Over (intact)](#game-over). Note that a blank line is printed
+before this output.
+
+```
+
+** FATAL ERROR **   YOU'VE JUST STRANDED YOUR SHIP IN 
+SPACE
+YOU HAVE INSUFFICIENT MANEUVERING ENERGY, AND SHIELD CONTROL
+IS PRESENTLY INCAPABLE OF CROSS-CIRCUITING TO ENGINE ROOM!!
+```
+
+> Note: in the output above, it feels like the intent might have been to
+> have the word `SPACE` on the first line, which would imply a semicolon
+> at the end of the first line. But no such thing is present in the
+> source.
+
+## Execute User Command
+
+A command prompt is printed (with a trailing space):
+
+```
+COMMAND? 
+```
+
+The case-sensitive commands are as follows:
+
+|Command|Description               |
+|-------|--------------------------|
+|`NAV`  |Navigate                  |
+|`SRS`  |Short range sensor scan   |
+|`LRS`  |Long range sensor scan    |
+|`PHA`  |Fire phasers              |
+|`TOR`  |Fire torpedos             |
+|`SHE`  |Change shield levels      |
+|`DAM`  |Damage control report     |
+|`COM`  |Library computer functions|
+|`XXX`  |Resign                    |
+
+If an unrecognized command is entered, a usage message is printed (with
+a trailing blank line), and control is returned to the [start of the main
+loop](#order-of-play).
+
+```
+ENTER ONE OF THE FOLLOWING:
+  NAV  (TO SET COURSE)
+  SRS  (FOR SHORT RANGE SENSOR SCAN)
+  LRS  (FOR LONG RANGE SENSOR SCAN)
+  PHA  (TO FIRE PHASERS)
+  TOR  (TO FIRE PHOTON TORPEDOES)
+  SHE  (TO RAISE OR LOWER SHIELDS)
+  DAM  (FOR DAMAGE CONTROL REPORTS)
+  COM  (TO CALL ON LIBRARY-COMPUTER)
+  XXX  (TO RESIGN YOUR COMMAND)
+
+```
