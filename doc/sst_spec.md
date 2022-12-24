@@ -9,6 +9,8 @@
 THE USS ENTERPRISE --- NCC-1701
 ```
 
+**WORK IN PROGRESS**
+
 ## Overview
 
 The goal of the game is to destroy all the Klingon cruisers in the
@@ -412,8 +414,8 @@ The case-sensitive commands are as follows:
 
 |Command|Description               |
 |-------|--------------------------|
-|`NAV`  |Navigate                  |
-|`SRS`  |Short range sensor scan   |
+|`NAV`  |[Navigate](#navigation)   |
+|`SRS`  |Short range sensor scan   | <!-- TODO -->
 |`LRS`  |Long range sensor scan    |
 |`PHA`  |Fire phasers              |
 |`TOR`  |Fire torpedos             |
@@ -423,8 +425,8 @@ The case-sensitive commands are as follows:
 |`XXX`  |Resign                    |
 
 If an unrecognized command is entered, a usage message is printed (with
-a trailing blank line), and control is returned to the [start of the main
-loop](#order-of-play).
+a trailing blank line), and control is returned to the [start of the Main
+Loop](#order-of-play).
 
 ```
 ENTER ONE OF THE FOLLOWING:
@@ -439,3 +441,88 @@ ENTER ONE OF THE FOLLOWING:
   XXX  (TO RESIGN YOUR COMMAND)
 
 ```
+
+## Navigation
+
+To navigate, the user selects a course from 0-9 (fractional courses are
+supported). The course direction layout is:
+               
+```
+  4  3  2
+   \ | /
+    \|/
+5 ---*--- 1 or 9
+    /|\
+   / | \
+  6  7  8
+```
+
+Course 9 is the same as course 1. Further wrapping of directions is
+unsupported (i.e. course `10` is not the same as `2`, and, in fact, does
+not exist). There are no negative course directions.
+
+If the Warp Engines are damaged, the maximum warp number is `0.2`.
+
+* Present the user with a course direction prompt (with trailing space):
+
+  ```
+  COURSE (0-9)? 
+  ```
+
+  `0` is an option here to allow the user to cancel the navigation
+  action. Sulu will still complain about it, below.
+
+* If the entered course is less than `1` or greater than `9`, print an
+  error message, then return to the [start of the Main
+  Loop](#order-of-play).
+
+  The error message has 3 leading spaces:
+
+  ```
+     LT. SULU REPORTS, 'INCORRECT COURSE DATA, SIR!'
+  ```
+
+* Present the user with a warp speed prompt (with trailing space).
+
+  If the Warp Engines aren't damaged:
+
+  ```
+  WARP FACTOR(0-8)? 
+  ```
+
+  If the Warp Engines are damaged:
+
+  ```
+  WARP FACTOR(0-0.2)? 
+  ```
+
+* If the entered warp value is `0`, silently return to the [start of the
+  Main Loop](#order-of-play).
+
+* If the Warp Engines are damaged and the user enters more than `0.2`,
+  print an error message and return to the [start of the Main
+  Loop](#order-of-play).
+
+  ```
+  WARP ENGINES ARE DAMAGED.  MAXIUM SPEED = WARP 0.2
+  ```
+
+  > `MAXIUM` is a typo in the BASIC source.
+
+* If user enters more than `8` or less than `1`, print an error message
+  and return to the [start of the Main Loop](#order-of-play).
+
+  There are 3 leading spaces on this message:
+
+  ```
+     CHIEF ENGINEER SCOTT REPORTS 'THE ENGINES WON'T TAKE WARP  www!'
+  ```
+
+  > There will be two spaces before a positive warp number in the error
+  > message since MBASIC prints a space before positive numbers, and the
+  > code contains an additional explicit space. But if the user enters a
+  > negative warp number, there would only be one space before the minus
+  > sign in the warp number.
+
+TODO basic line 2490
+
