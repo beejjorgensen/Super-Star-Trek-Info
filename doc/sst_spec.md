@@ -79,6 +79,8 @@ TODO
 
 As the game begins, the following initialization takes place:
 
+* Print 11 blank lines.
+
 * Print the welcome splash:
 
   ```
@@ -91,6 +93,8 @@ As the game begins, the following initialization takes place:
                       THE USS ENTERPRISE --- NCC-1701
   ```
 
+* Print 5 blank lines.
+
 * Choose the starting stardate.
 
   This is computed as a random integer in the range `[20,39]` multiplied
@@ -101,7 +105,7 @@ As the game begins, the following initialization takes place:
 
 * Compute the length of the mission in stardates (analogous to "days").
 
-  Choose a random integer `[1,9]`, and add `25` to it.
+  Choose a random integer in the range `[25,34]`.
 
 * Set the maximum possible Enterprise energy level to `3000`.
 
