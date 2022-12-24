@@ -463,6 +463,8 @@ not exist). There are no negative course directions.
 
 If the Warp Engines are damaged, the maximum warp number is `0.2`.
 
+Gameplay:
+
 * Present the user with a course direction prompt (with trailing space):
 
   ```
