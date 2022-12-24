@@ -1218,8 +1218,8 @@ REM    additional_damage = -(H / S + r)
 6170 PRINT"DAMAGE CONTROL REPORTS '";G2$;" DAMAGED BY THE HIT'"
 6200 NEXTI:RETURN
 
-REM Routine 6220: Game Over, time out
-REM Routine 6240: Game OVer, Enterprise destroyed
+REM Routine 6220: Game Over, time out or out of energy
+REM Routine 6240: Game Over, Enterprise destroyed
 REM
 REM Inputs:
 REM
