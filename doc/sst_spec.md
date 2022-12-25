@@ -1,3 +1,13 @@
+<!--
+TODO
+
+Move SRS note down
+Add appendices
+* Damage systems
+* Map of the galaxy
+  * Fix map to proper game output
+-->
+
 # Super Star Trek Specification
 
 ```
@@ -109,10 +119,10 @@ As the game begins, the following initialization takes place:
 
   Choose a random integer in the range `[25,34]`.
 
-* Set the maximum possible Enterprise energy level to `3000`.
+* Set the maximum possible Enterprise main energy level to `3000`.
 
-* Set the current Enterprise energy level to the maximum possible energy
-  level.
+* Set the current Enterprise main energy level to the maximum possible
+  main energy level.
 
 * Set the maximum possible Enterprise photon torpedo count to `10`.
 
@@ -289,7 +299,7 @@ As the game begins, the following initialization takes place:
 
 * If the Enterprise is docked:
 
-  * Set current energy level to maximum.
+  * Set current Enterprise main energy level to maximum.
   * Set photon torpedo count to maximum.
   * Set shields to `0`.
   * Print a shields message:
@@ -305,8 +315,8 @@ As the game begins, the following initialization takes place:
   * If there are any Klingon's in the quadrant, the condition is
     `*RED*`.
 
-  * Else if the Enterprise's energy (not counting shields) is less than
-    10% of maximum, the condition is `YELLOW`.
+  * Else if the Enterprise's main energy (not counting shields) is less
+    than 10% of maximum, the condition is `YELLOW`.
 
   * Else the condition is `GREEN`.
 
@@ -350,7 +360,7 @@ As the game begins, the following initialization takes place:
 
   All other numeric values are printed as truncated integers.
 
-  `TOTAL ENERGY` is the Enterprise's energy plus its shield energy.
+  `TOTAL ENERGY` is the Enterprise's main energy plus its shield energy.
   `SHIELDS` is just the shield energy.
 
   `KLINGONS REMAINING` is total Klingons in the game.
@@ -372,15 +382,16 @@ As the game begins, the following initialization takes place:
 
 ## Check for Out Of Energy
 
-Note that the total energy in the Enterprise is the energy level plus
-the shield energy level. (Energy can be moved from main energy to
+Note that the total energy in the Enterprise is the main energy level
+plus the shield energy level. (Energy can be moved from main energy to
 shields and back).
 
-If the Enterprise's total energy (shields + energy) is `10` or lower,
+If the Enterprise's total energy (shields + main) is `10` or lower,
 the Enterprise is out of power.
 
-If the total energy is greater than `10`, but the energy alone is `10`
-or lower AND shield control is damaged, the Enterprise is out of power.
+If the total energy is greater than `10`, but the main energy alone is
+`10` or lower AND shield control is damaged, the Enterprise is out of
+power.
 
 If the Enterprise is out of power, print a message (below), then jump to
 [Game Over (intact)](#game-over). Note that a blank line is printed
@@ -443,6 +454,13 @@ ENTER ONE OF THE FOLLOWING:
 ```
 
 ## Navigation
+
+A lot of things happen when you navigate:
+
+1. The Enterprise moves.
+2. The Klingons move.
+3. Damaged subsystems are repaired.
+4. TODO
 
 To navigate, the user selects a course from 0-9 (fractional courses are
 supported). The course direction layout is:
@@ -526,5 +544,114 @@ Gameplay:
   > negative warp number, there would only be one space before the minus
   > sign in the warp number.
 
-TODO basic line 2490
+* Compute the energy required for this maneuver. This is the warp factor
+  times `8`, rounded to the nearest integer.
+
+  ```
+  energy_needed = int(warp_factor * 8 + .5)
+  energy_needed = round_nearest(warp_factor * 8)  // same thing
+  ```
+
+* If `energy_needed` is greater than Enterprise main energy, print an
+  error message:
+
+  ```
+  ENGINEERING REPORTS   'INSUFFICIENT ENERGY AVAILABLE
+                         FOR MANEUVERING AT WARP w!'
+  ```
+
+  Also perform the following:
+  
+  * If total energy (main + shields) is greater than or equal to
+    `energy_needed` AND shield control is undamaged, let the player
+    know. (They might want to transfer some to main to maneuver.)
+
+    ```
+    DEFLECTOR CONTROL ROOM ACKNOWLEGES ssss UNITS OF ENERGY
+                             PRESENTLY DEPLOYED TO SHIELDS.
+    ```
+
+    > "ACKNOWLEGES" is a typo in the original source.
+
+  * Return to the [start of the Main Loop](#order-of-play).
+
+* All Klingons in the quadrant move.
+
+  For each Klingon, move them to an unused random sector in their
+  current quadrant.
+
+* Repair damaged systems and report on completed repairs.
+
+  There are 8 systems that can be damaged.
+
+  System damage values are roughly the negative of "stardates needed to
+  repair". e.g., `-2.6` would be "2.6 stardates to repair".
+
+  Negative values mean the system is damaged. `0` means it is repaired.
+
+  The number of days it takes to travel is the warp factor, capped at
+  `1`.
+
+  So:
+
+  ```
+  repair_amount = max(warp_factor, 1)
+  ```
+
+  * For each _damaged_ system, add `repair_amount` to their repair
+    values, driving those values up toward `0`.
+
+    * If the system damage is greater than `-0.1` and less than `0`, set
+      it to `-0.1`.
+
+      > I'm unsure why this happens. Either it's some kind of round-off
+      > protection, or some attempt to keep it at one decimal place...?
+
+      Continue to the next system.
+
+    * If the system damage is less than `0`, continue to the next
+      system.
+
+    * Report the system repaired.
+
+      * If this is the first system repaired this move, print a header:
+
+        (Two trailing spaces. No newline.)
+
+        ```
+        DAMAGE CONTROL REPORT:  
+        ```
+
+      * Cursor to the next 8-space tab stop.
+
+        For the first system, this will be directly after the two spaces
+        in the header, above.
+
+        For subsequent systems, this will be 8 spaces from the left.
+
+        > Probably. According to the documetation for MBASIC-80, the
+        > first tab would actually go to the next line since the cursor
+        > was already past the 8th position. But in the sample run in
+        > _101 BASIC Computer Games_, it shows it on the same line.
+
+      * Print the system name followed by a repair message:
+
+        ```
+        sssssssssss REPAIR COMPLETED.
+        ```
+
+        The system names are:
+
+        |ID|Name                |
+        |-|---------------------|
+        |1|`WARP ENGINES`       |
+        |2|`SHORT RANGE SENSORS`|
+        |3|`LONG RANGE SENSORS` |
+        |4|`PHASER CONTROL`     |
+        |5|`PHOTON TUBES`       |
+        |6|`DAMAGE CONTROL`     |
+        |7|`SHIELD CONTROL`     |
+        |8|`LIBRARY-COMPUTER`   |
+
+TODO basic line 2880
 
