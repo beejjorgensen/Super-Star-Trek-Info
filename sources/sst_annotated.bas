@@ -506,7 +506,7 @@ REM D6 = Amount of repair, set to the input warp value, clamped at 1
 
 2700 NEXTI:GOSUB6000:D1=0:D6=W1:IFW1>=1THEND6=1
 
-REM This block of code prepares of report of systems that came back
+REM This block of code prepares a report of systems that came back
 REM online this turn.
 REM
 REM For all crit systems, if the damage level >= 0, no report of repair
