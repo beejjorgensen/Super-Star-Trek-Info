@@ -621,10 +621,10 @@ REM Called repeatedly during ship motion.
 REM
 REM Inputs:
 REM 
-REM S1 = Sector row
-REM S2 = Sector column
 REM Q1 = Quadrant row
 REM Q2 = Quadrant column
+REM X1 = Row step
+REM X2 = Column step
 REM X = Previous S1
 REM Y = Previous S2
 REM Q4 = Previous Q1
@@ -634,6 +634,10 @@ REM
 REM Outputs:
 REM 
 REM X5 = 1 if we tried to go off the map, 0 otherwise
+REM Q1 = New quadrant row
+REM Q2 = New quadrant column
+REM S1 = New sector row
+REM S2 = New sector column
 
 3490 REM EXCEEDED QUADRANT LIMITS
 
