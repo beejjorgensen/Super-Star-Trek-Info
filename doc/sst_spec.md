@@ -802,7 +802,7 @@ Gameplay:
 
     * If the Enterprise has moved out of the quadrant:
 
-      Jump to [Move Between Quadrants](#routine--move-between-quadrants)
+      Jump to [Move Between Quadrants](#routine-move-between-quadrants)
       code.
 
     * Check to see if the new sector already has something in it. If it
