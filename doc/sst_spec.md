@@ -80,8 +80,10 @@ For example row 5, column 6 is `ALDEBARAN II`.
 * Initialization and setup:
   * [Initialize game](#initialize-game).
   * [Enter a New Quadrant](#entering-a-new-quadrant).
-* Start of Main Loop:
   * Perform a [Short Range Sensor Scan](#short-range-sensor-scan).
+* Start of Main Loop with SRS:
+  * Perform a [Short Range Sensor Scan](#short-range-sensor-scan).
+* Start of Main Loop:
   * [Check for Out of Energy](#check-for-out-of-energy).
   * [Execute User Command](#execute-user-command).
 
@@ -457,10 +459,12 @@ ENTER ONE OF THE FOLLOWING:
 
 A lot of things happen when you navigate:
 
-1. The Enterprise moves.
+1. The Enterprise movement user input is gathered.
 2. The Klingons move.
 3. Damaged subsystems are repaired.
-4. TODO
+4. Random damage event occurs.
+5. Enterprise moves.
+6. TODO
 
 To navigate, the user selects a course from 0-9 (fractional courses are
 supported). The course direction layout is:
@@ -653,5 +657,260 @@ Gameplay:
         |7|`SHIELD CONTROL`     |
         |8|`LIBRARY-COMPUTER`   |
 
-TODO basic line 2880
+* Spontaneously damage or speedily repair systems in a random event.
+
+  * There's a 20% chance a random damage even occurs.
+
+    If it does:
+
+    * There's a 60% chance it's a bad random event:
+
+      Damage a random system by a random floating point amount in the
+      range `[1,5]`.
+
+      Print a message (followed by a blank line):
+
+      ```
+      DAMAGE CONTROL REPORT:  sssssssssssss DAMAGED"
+
+      ```
+
+      System names are noted, above.
+
+    * Else (40% chance) it's a good random event:
+
+      Repair a random system by a random floating point amount in the
+      range `[1,3]`.
+
+      Print a message (followed by a blank line):
+
+      ```
+      DAMAGE CONTROL REPORT:  sssssssssssss STATE OF REPAIR IMPROVED""
+
+      ```
+
+* Compute the row and column movement steps for the Enterprise.
+
+  This gets interesting.
+
+  First, all nav directions correspond to row and column offsets for
+  movement. For example, direction `2` requires you to add `-1` to the
+  row and `1` to the column:
+
+  ```
+           (-1,0)
+    (-1,-1)       (-1,1)
+           4  3  2
+            \ | /
+             \|/
+  (0,-1) 5 ---*--- 1 or 9 (0,1)
+             /|\
+            / | \
+           6  7  8
+     (1,-1)       (1,1)
+            (1,0)
+  ```
+
+  But you can also set a fractional course, e.g. `1.25`. What are the
+  movement offsets in that case?
+
+  The row and column offset are computed by looking at the requested
+  integer course and the _next_ integer course. e.g. for `1.25`, the
+  math will look at the offsets for courses `1` and `2`.
+
+  A course of `8.xx` will look at courses `8` and `9`, where `9` is the
+  same as `1`.
+
+  The fractional part of the course will then be used to LERP between
+  row or column values depending on the direction chosen.
+
+  Let's encode the above table into 1-based arrays:
+  
+  ```
+  course_row_offset = [0,-1,-1,-1,0,1,1,1,0]   # 1-based!
+  course_col_offset = [1,1,0,-1,-1,-1,0,1,1]
+  ```
+
+  Break the requested course into whole and fractional components. The
+  fraction will later be used to LERP between two whole directions.
+
+  ```
+  int_course = int(course)    # Whole number part, e.g. `1`
+  frac_course = frac(course)  # Fractional part, e.g `0.25`
+  ```
+
+  Compute the next course up from the requested one:
+
+  ```
+  next_course = int_course + 1 # Whole number next course up, e.g. `2`.
+  ```
+
+  Compute the differences in row and col offsets between this whole
+  course and the next whole course. It's important to note that one of
+  these is always zero.
+
+  ```
+  row_offset_diff = course_row_offset[next_course] - \
+                    course_row_offset[int_course]
+
+  col_offset_diff = course_col_offset[next_course] - \
+                    course_col_offset[int_course]
+  ```
+
+  Compute the LERPed row and column diffs, based on the fractional part
+  of the requested direction. Note that one of these is always zero.
+
+  ```
+  row_offset_diff_lerp = row_offset_diff * frac_course
+  col_offset_diff_lerp = col_offset_diff * frac_course
+  ```
+
+  Compute how much to add to Enterprise's sector row and column each
+  step. One of these will have an absolute value of `1`, and the other
+  will have an absolute value in the range `[0,1]`.
+
+  ```
+  row_step = course_row_offset[int_course] + row_offset_diff_lerp
+  col_step = course_colcocolet[int_course] + col_offset_diff_lerp
+  ```
+
+  These are the values that we'll move the Enterprise each step.
+
+* Move the Enterprise.
+
+  Remember when we computed the energy needed for the maneuver way up
+  there? Refresher:
+
+  ```
+  energy_needed = int(warp_factor * 8 + .5)
+  energy_needed = round_nearest(warp_factor * 8)  // same thing
+  ```
+
+  We're going to loop that many times.
+
+  ```
+  loop_count = energy_needed
+  ```
+
+  * Loop `loop_count` times:
+
+    * Add `row_step` to Enterprise's current row. (Might have a
+      fractional result.)
+
+    * Add `col_step` to Enterprise's current column. (Might have a
+      fractional result.)
+
+    * If the Enterprise has moved out of the quadrant:
+
+      Jump to [Move Between Quadrants](#routine--move-between-quadrants)
+      code.
+
+    * Check to see if the new sector already has something in it. If it
+      does, don't move the Enterprise there, and print an error message:
+
+      ```
+      WARP ENGINES SHUT DOWN AT SECTOR s , s DUE TO BAD NAVIGATION
+      ```
+
+      Break out of this loop.
+
+  * Truncate any fractional part of the Enterprise's row and column
+    values.
+
+  * Call subroutine [Subtract Energy](#subroutine--subtract-energy).
+
+  * Place the Enterprise in its new position on the map.
+
+* Compute the stardates it took to move.
+
+  If the warp factor was greater than or equal to `1`, add `1` to the
+  current stardate.
+
+  If the warp factor was less than `1`, then compute the warp factor
+  rounded to the nearest tenth. Add that to the current stardate.
+
+* Determine if the game is over.
+
+  If the current stardate is greater than the starting stardate plus the
+  game length, jump to [Game Over (intact)](#game-over--intact-).
+
+* Jump to [Start of Main Loop with SRS](#order-of-play).
+
+## Subroutine: Subtract Energy
+
+* Subtract the `energy_needed` for the warp maneuver from the
+  Enterprise's main energy.
+
+* If the main energy is less than `0`:
+
+  * Print a message:
+
+    ```
+    SHIELD CONTROL SUPPLIES ENERGY TO COMPLETE THE MANEUVER.
+    ```
+
+  * Add main energy (which is negative) to the shield energy.
+
+  * If the shield energy is less than `0`, clamp it to `0`.
+
+* Return to caller.
+
+## Routine: Move Between Quadrants
+
+When traveling between quadrants, we're not concerned with hitting
+anything. We're just going to compute the destination.
+
+First, get the complete `row_step` and `col_step` (in sectors) for the
+entire move by multiplying those steps by `loop_count`:
+
+```
+total_row_step = loop_count * row_step
+total_col_step = loop_count * row_col
+```
+
+Figure out our start coordinates in sector space by multiplying the
+quadrant coordinates by `8` and adding on our sector coordinates:
+
+```
+sector_space_row = quadrant_row * 8 + sector_row
+sector_space_col = quadrant_col * 8 + sector_col
+```
+
+Add on the total steps to get to our new destination:
+
+```
+sector_space_new_row = sector_space_row + total_row_step
+sector_space_new_col = sector_space_col + total_col_step
+```
+
+Compute the new quadrant by dividing our sector by `8` and throwing away
+the fractional part:
+
+```
+new_quadrant_row = int(sector_space_new_row / 8)
+new_quadrant_col = int(sector_space_new_col / 8)
+```
+
+Compute the new sector coordinates within the quadrant (back to quadrant
+space):
+
+```
+new_sector_row = int(sector_space_new_row - new_quadrant_row * 8)
+new_sector_col = int(sector_space_new_col - new_quadrant_col * 8)
+```
+
+There's a chance this might end up with zero values for the row or
+column. Since we're 1-based for everything, foolishly, we have to deal
+with it:
+
+* If the sector row is `0`, set it to `8` and subtract `1` from the new
+  quadrant row.
+
+* If the sector column is `0`, set it to `8` and subtract `1` from the
+  new quadrant column.
+
+> A lot of this nastiness can be avoided if you just used zero-based
+> locations internally and changed them to 1-based on presentation.
+
+TODO BASIC line 3620
 
