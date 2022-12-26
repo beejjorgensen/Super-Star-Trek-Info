@@ -817,7 +817,7 @@ Gameplay:
   * Truncate any fractional part of the Enterprise's row and column
     values.
 
-  * Call subroutine [Subtract Energy](#subroutine--subtract-energy).
+  * Call subroutine [Subtract Energy](#subroutine-subtract-energy).
 
   * Place the Enterprise in its new position on the map.
 
@@ -832,7 +832,7 @@ Gameplay:
 * Determine if the game is over.
 
   If the current stardate is greater than the starting stardate plus the
-  game length, jump to [Game Over (intact)](#game-over--intact-).
+  game length, jump to [Game Over (intact)](#game-over-intact).
 
 * Jump to [Start of Main Loop with SRS](#order-of-play).
 
