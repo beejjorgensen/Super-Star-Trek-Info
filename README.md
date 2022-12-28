@@ -17,7 +17,8 @@ Super Star Trek from _Basic Computer Games, Microcomputer Edition_.
 
 This is a "clean room" description of the game.
 
-* TODO
+* [The Super Star Trek Specification](doc/sst_spec.md) [**INCOMPLETE,
+  WORK IN PROGRESS**]
 
 ## Documents
 
@@ -35,8 +36,11 @@ and compared against a physical copy of the book.
 
 All typos have been reproduced them faithfully from the source.
 
-* [**Super Star Trek source**](sources/sst.bas)
-* [Super Star Trek source, annotated](sources/sst_annotated.bas)
+* [**Super Star Trek source**](sources/sst.bas)&mdash;this is the most
+  accurate one I have.
+* [Super Star Trek source,
+  annotated](sources/sst_annotated.bas)&mdash;with notes written in
+  exploring the source.
 
 Here are the instructions:
 
