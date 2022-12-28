@@ -1,11 +1,14 @@
 <!--
 TODO
 
-Move SRS note down
+All commands
+All library computer
+
+Untangle routines more
+
 Add appendices
 * Damage systems
-* Map of the galaxy
-  * Fix map to proper game output
+* Fix map to proper game output
 -->
 
 # Super Star Trek Specification
@@ -16,6 +19,7 @@ Add appendices
  '-------- --'      / /
      ,---' '-------/ /--,
       '----------------'
+
 THE USS ENTERPRISE --- NCC-1701
 ```
 
@@ -25,8 +29,6 @@ THE USS ENTERPRISE --- NCC-1701
 
 The goal of the game is to destroy all the Klingon cruisers in the
 galaxy within a certain timeframe.
-
-### Galactic Layout
 
 The galaxy is a 8x8 grid of quadrants. Each quadrant is further
 subdivided into an 8x8 grid of sectors.
@@ -41,48 +43,14 @@ Each sector contains one thing, which might be:
 * A starbase
 * A star
 
-### Map of the Galaxy
-
-Each quadrant has a name and an optional Roman numeral after.
-
-For example row 5, column 6 is `ALDEBARAN II`.
-
-```
-    1   2   3   4   5   6   7   8
-
-1        ANTARES        SIRIUS
-    I   II  III IV  I   II  III IV
-
-2         RIGEL         DENEB
-    I   II  III IV  I   II  III IV
-
-3        PROCYON       CAPELLA
-    I   II  III IV  I   II  III IV
-
-4         VEGA        BETELGEUSE
-    I   II  III IV  I   II  III IV
-
-5        CANOPUS       ALDEBARAN
-    I   II  III IV  I   II  III IV
-
-6        ALTAIR         REGULUS
-    I   II  III IV  I   II  III IV
-
-7      SAGITTARIUS     ARCTURUS
-    I   II  III IV  I   II  III IV
-
-8        POLLUX         SPICA
-    I   II  III IV  I   II  III IV
-```
-
 ## Order of Play
 
 * Initialization and setup:
   * [Initialize game](#initialize-game).
+* Start of Main Loop with Enter Quadrant:
   * [Enter a New Quadrant](#entering-a-new-quadrant).
-  * Perform a [Short Range Sensor Scan](#short-range-sensor-scan).
 * Start of Main Loop with SRS:
-  * Perform a [Short Range Sensor Scan](#short-range-sensor-scan).
+  * Perform a [Short Range Sensor Scan](#subroutine-short-range-sensor-scan).
 * Start of Main Loop:
   * [Check for Out of Energy](#check-for-out-of-energy).
   * [Execute User Command](#execute-user-command).
@@ -292,96 +260,6 @@ As the game begins, the following initialization takes place:
 * Look up the number of stars in this quadrant. Place that many stars in
   random unused sectors.
 
-## Short Range Sensor Scan
-
-* Determine if the Enterprise is docked.
-
-  The Enterprise is docked if it is adjacent to a starbase, including
-  diagonals.
-
-* If the Enterprise is docked:
-
-  * Set current Enterprise main energy level to maximum.
-  * Set photon torpedo count to maximum.
-  * Set shields to `0`.
-  * Print a shields message:
-    ```
-    SHIELDS DROPPED FOR DOCKING PURPOSES
-    ```
-
-> Arguably, the above doesn't belong in the Short Range Sensor code, but
-> it's in there in the original source.
-
-* Determine the ship's battle condition:
-
-  * If there are any Klingon's in the quadrant, the condition is
-    `*RED*`.
-
-  * Else if the Enterprise's main energy (not counting shields) is less
-    than 10% of maximum, the condition is `YELLOW`.
-
-  * Else the condition is `GREEN`.
-
-
-* If the Short Range Sensors are damaged, print a message and return
-  from the Short Range Sensors routine.
-
-  ```
-  *** SHORT RANGE SENSORS ARE OUT ***
-  ```
-
-* Otherwise, print out the Short Range Sensor Scan. The layout of the
-  screen is as follows, with filler `...` and `xxx` in the sector
-  positions, and filler values on the right:
-
-  ```
-  ---------------------------------
-   ... xxx ... xxx ... xxx ... xxx        STARDATE           ssss[.s]
-   xxx ... xxx ... xxx ... xxx ...        CONDITION          cccc
-   ... xxx ... xxx ... xxx ... xxx        QUADRANT           q , q
-   xxx ... xxx ... xxx ... xxx ...        SECTOR             s , s
-   ... xxx ... xxx ... xxx ... xxx        PHOTON TORPEDOES   tt
-   xxx ... xxx ... xxx ... xxx ...        TOTAL ENERGY       eeee
-   ... xxx ... xxx ... xxx ... xxx        SHIELDS            ssss
-   xxx ... xxx ... xxx ... xxx ...        KLINGONS REMAINING kk
-  ---------------------------------
-  ```
-
-  The actual sector contents will be 3 spaces each, and are as follows:
-
-  |Value|Description|
-  |:---:|-----------|
-  |`<*>`|Enterprise |
-  |`+K+`|Klingon    |
-  |`>!<`|Starbase   |  <!-- In order to get this rendered right,     -->
-  |` * `|Star       |  <!-- these are nonbreaking spaces in the star -->
-  |`   `|Empty space|  <!-- and empty space entries. UTF-8 0xA0.     -->
-
-  The `STARDATE` is printed as an integer if it is a whole number.
-  Otherwise it is printed with 1 digit past the decimal place.
-
-  All other numeric values are printed as truncated integers.
-
-  `TOTAL ENERGY` is the Enterprise's main energy plus its shield energy.
-  `SHIELDS` is just the shield energy.
-
-  `KLINGONS REMAINING` is total Klingons in the game.
-
-  Example:
-
-  ```
-  ---------------------------------
-                                          STARDATE           3061.2
-        *          <*>                    CONDITION          *RED*
-                                          QUADRANT           7 , 1 
-                                          SECTOR             2 , 5
-                        *                 PHOTON TORPEDOES   3
-           >!<                            TOTAL ENERGY       1929
-                           +K+            SHIELDS            430
-                                          KLINGONS REMAINING 6
-  ---------------------------------
-  ```
-
 ## Check for Out Of Energy
 
 Note that the total energy in the Enterprise is the main energy level
@@ -425,17 +303,17 @@ COMMAND?
 
 The case-sensitive commands are as follows:
 
-|Command|Description               |
-|-------|--------------------------|
-|`NAV`  |[Navigate](#navigation)   |
-|`SRS`  |Short range sensor scan   | <!-- TODO -->
-|`LRS`  |Long range sensor scan    |
-|`PHA`  |Fire phasers              |
-|`TOR`  |Fire torpedos             |
-|`SHE`  |Change shield levels      |
-|`DAM`  |Damage control report     |
-|`COM`  |Library computer functions|
-|`XXX`  |Resign                    |
+|Command|Description                                                   |
+|-------|--------------------------------------------------------------|
+|`NAV`  |[Navigate](#navigation)                                       |
+|`SRS`  |[Short range sensor scan](#subroutine-short-range-sensor-scan)|
+|`LRS`  |Long range sensor scan                                        | <!-- TODO -->
+|`PHA`  |Fire phasers                                                  |
+|`TOR`  |Fire torpedos                                                 |
+|`SHE`  |Change shield levels                                          |
+|`DAM`  |Damage control report                                         |
+|`COM`  |Library computer functions                                    |
+|`XXX`  |Resign                                                        |
 
 If an unrecognized command is entered, a usage message is printed (with
 a trailing blank line), and control is returned to the [start of the Main
@@ -817,9 +695,13 @@ Gameplay:
   * Truncate any fractional part of the Enterprise's row and column
     values.
 
-  * Call subroutine [Subtract Energy](#subroutine-subtract-energy).
+  * Jump to [Post-Move](#routine-post-move).
 
-  * Place the Enterprise in its new position on the map.
+## Routine: Post-Move
+
+* Visually place the Enterprise in its new position on the map.
+
+* Call subroutine [Subtract Energy](#subroutine-subtract-energy).
 
 * Compute the stardates it took to move.
 
@@ -860,57 +742,224 @@ Gameplay:
 When traveling between quadrants, we're not concerned with hitting
 anything. We're just going to compute the destination.
 
-First, get the complete `row_step` and `col_step` (in sectors) for the
-entire move by multiplying those steps by `loop_count`:
+* First, get the complete `row_step` and `col_step` (in sectors) for the
+  entire move by multiplying those steps by `loop_count`:
+
+  ```
+  total_row_step = loop_count * row_step
+  total_col_step = loop_count * row_col
+  ```
+
+* Figure out our start coordinates in sector space by multiplying the
+  quadrant coordinates by `8` and adding on our sector coordinates:
+
+  ```
+  sector_space_row = quadrant_row * 8 + sector_row
+  sector_space_col = quadrant_col * 8 + sector_col
+  ```
+
+* Add on the total steps to get to our new destination:
+
+  ```
+  sector_space_new_row = sector_space_row + total_row_step
+  sector_space_new_col = sector_space_col + total_col_step
+  ```
+
+* Compute the new quadrant by dividing our sector by `8` and throwing
+  away the fractional part:
+
+  ```
+  new_quadrant_row = int(sector_space_new_row / 8)
+  new_quadrant_col = int(sector_space_new_col / 8)
+  ```
+
+* Compute the new sector coordinates within the quadrant (back to
+  quadrant space):
+
+  ```
+  new_sector_row = int(sector_space_new_row - new_quadrant_row * 8)
+  new_sector_col = int(sector_space_new_col - new_quadrant_col * 8)
+  ```
+
+* There's a chance this might end up with zero values for the row or
+  column. Since we're 1-based for everything, foolishly, we have to deal
+  with it:
+
+  * If the sector row is `0`, set it to `8` and subtract `1` from the
+    new quadrant row.
+
+  * If the sector column is `0`, set it to `8` and subtract `1` from the
+    new quadrant column.
+
+  > A lot of this nastiness can be avoided if you just used zero-based
+  > locations internally and changed them to 1-based on presentation.
+
+* Check for moving beyond the edges of the galaxy.
+
+  * If the quadrant row is less than `1`:
+    * Set the quadrant row to `1`.
+    * Set the sector row to `1`.
+
+  * If the quadrant row is greater than `8`:
+    * Set the quadrant row to `8`.
+    * Set the sector row to `8`.
+
+  * If the quadrant column is less than `1`:
+    * Set the quadrant column to `1`.
+    * Set the sector column to `1`.
+
+  * If the quadrant column is greater than `8`:
+    * Set the quadrant column to `8`.
+    * Set the sector column to `8`.
+
+  * If we were out of bounds in any way, print an error message:
+
+    ```
+    LT. UHURA REPORTS MESSAGE FROM STARFLEET COMMAND:
+      'PERMISSION TO ATTEMPT CROSSING OF GALACTIC PERIMETER
+      IS HEREBY *DENIED*.  SHUT DOWN YOUR ENGINES.'
+    CHIEF ENGINEER SCOTT REPORTS  'WARP ENGINES SHUT DOWN
+      AT SECTOR sr , sc OF QUADRANT qr , qc .'
+    ```
+
+* Check for time exceeded (if the current stardate is greater than the
+  starting stardate + game length). See [Game Over
+  (intact)](#game-over).
+
+* If the new quadrant is the same as the one we were previously in, jump
+  to [Post-Move](#routine-post-move), above. 
+
+  > This happens when you try to fly out of the galaxy, which keeps you
+  > in the same quadrant. In normal usage of this routine, you'd change
+  > to a new quadrant, and [Entering a New
+  > Quadrant](#entering-a-new-quadrant) would place the Enterprise.
+
+* Add `1` to the current stardate.
+
+* Call subroutine [Subtract Energy](#subroutine-subtract-energy).
+
+* Jump to [Start of Main Loop with Enter Quadrant](#order-of-play).
+
+## Subroutine: Short Range Sensor Scan
+
+* Determine if the Enterprise is docked.
+
+  The Enterprise is docked if it is adjacent to a starbase, including
+  diagonals.
+
+* If the Enterprise is docked:
+
+  * Set current Enterprise main energy level to maximum.
+  * Set photon torpedo count to maximum.
+  * Set shields to `0`.
+  * Print a shields message:
+    ```
+    SHIELDS DROPPED FOR DOCKING PURPOSES
+    ```
+
+> Arguably, the above doesn't belong in the Short Range Sensor code, but
+> it's in there in the original source.
+
+* Determine the ship's battle condition:
+
+  * If there are any Klingon's in the quadrant, the condition is
+    `*RED*`.
+
+  * Else if the Enterprise's main energy (not counting shields) is less
+    than 10% of maximum, the condition is `YELLOW`.
+
+  * Else the condition is `GREEN`.
+
+
+* If the Short Range Sensors are damaged, print a message and return
+  from the Short Range Sensors routine.
+
+  ```
+  *** SHORT RANGE SENSORS ARE OUT ***
+  ```
+
+* Otherwise, print out the Short Range Sensor Scan. The layout of the
+  screen is as follows, with filler `...` and `xxx` in the sector
+  positions, and filler values on the right:
+
+  ```
+  ---------------------------------
+   ... xxx ... xxx ... xxx ... xxx        STARDATE           ssss[.s]
+   xxx ... xxx ... xxx ... xxx ...        CONDITION          cccc
+   ... xxx ... xxx ... xxx ... xxx        QUADRANT           q , q
+   xxx ... xxx ... xxx ... xxx ...        SECTOR             s , s
+   ... xxx ... xxx ... xxx ... xxx        PHOTON TORPEDOES   tt
+   xxx ... xxx ... xxx ... xxx ...        TOTAL ENERGY       eeee
+   ... xxx ... xxx ... xxx ... xxx        SHIELDS            ssss
+   xxx ... xxx ... xxx ... xxx ...        KLINGONS REMAINING kk
+  ---------------------------------
+  ```
+
+  The actual sector contents will be 3 spaces each, and are as follows:
+
+  |Value|Description|
+  |:---:|-----------|
+  |`<*>`|Enterprise |
+  |`+K+`|Klingon    |
+  |`>!<`|Starbase   |  <!-- In order to get this rendered right,     -->
+  |` * `|Star       |  <!-- these are nonbreaking spaces in the star -->
+  |`   `|Empty space|  <!-- and empty space entries. UTF-8 0xA0.     -->
+
+  The `STARDATE` is printed as an integer if it is a whole number.
+  Otherwise it is printed with 1 digit past the decimal place.
+
+  All other numeric values are printed as truncated integers.
+
+  `TOTAL ENERGY` is the Enterprise's main energy plus its shield energy.
+  `SHIELDS` is just the shield energy.
+
+  `KLINGONS REMAINING` is total Klingons in the game.
+
+  Example:
+
+  ```
+  ---------------------------------
+                                          STARDATE           3061.2
+        *          <*>                    CONDITION          *RED*
+                                          QUADRANT           7 , 1 
+                                          SECTOR             2 , 5
+                        *                 PHOTON TORPEDOES   3
+           >!<                            TOTAL ENERGY       1929
+                           +K+            SHIELDS            430
+                                          KLINGONS REMAINING 6
+  ---------------------------------
+  ```
+
+## Appendix A: Map of the Galaxy
+
+Each quadrant has a name and an optional Roman numeral after.
+
+For example row 5, column 6 is `ALDEBARAN II`.
 
 ```
-total_row_step = loop_count * row_step
-total_col_step = loop_count * row_col
+    1   2   3   4   5   6   7   8
+
+1        ANTARES        SIRIUS
+    I   II  III IV  I   II  III IV
+
+2         RIGEL         DENEB
+    I   II  III IV  I   II  III IV
+
+3        PROCYON       CAPELLA
+    I   II  III IV  I   II  III IV
+
+4         VEGA        BETELGEUSE
+    I   II  III IV  I   II  III IV
+
+5        CANOPUS       ALDEBARAN
+    I   II  III IV  I   II  III IV
+
+6        ALTAIR         REGULUS
+    I   II  III IV  I   II  III IV
+
+7      SAGITTARIUS     ARCTURUS
+    I   II  III IV  I   II  III IV
+
+8        POLLUX         SPICA
+    I   II  III IV  I   II  III IV
 ```
-
-Figure out our start coordinates in sector space by multiplying the
-quadrant coordinates by `8` and adding on our sector coordinates:
-
-```
-sector_space_row = quadrant_row * 8 + sector_row
-sector_space_col = quadrant_col * 8 + sector_col
-```
-
-Add on the total steps to get to our new destination:
-
-```
-sector_space_new_row = sector_space_row + total_row_step
-sector_space_new_col = sector_space_col + total_col_step
-```
-
-Compute the new quadrant by dividing our sector by `8` and throwing away
-the fractional part:
-
-```
-new_quadrant_row = int(sector_space_new_row / 8)
-new_quadrant_col = int(sector_space_new_col / 8)
-```
-
-Compute the new sector coordinates within the quadrant (back to quadrant
-space):
-
-```
-new_sector_row = int(sector_space_new_row - new_quadrant_row * 8)
-new_sector_col = int(sector_space_new_col - new_quadrant_col * 8)
-```
-
-There's a chance this might end up with zero values for the row or
-column. Since we're 1-based for everything, foolishly, we have to deal
-with it:
-
-* If the sector row is `0`, set it to `8` and subtract `1` from the new
-  quadrant row.
-
-* If the sector column is `0`, set it to `8` and subtract `1` from the
-  new quadrant column.
-
-> A lot of this nastiness can be avoided if you just used zero-based
-> locations internally and changed them to 1-based on presentation.
-
-TODO BASIC line 3620
-
