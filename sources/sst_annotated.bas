@@ -599,12 +599,13 @@ REM "NAVAGATION" [sic]
 3360 NEXTI:S1=INT(S1):S2=INT(S2)
 
 REM Place Enterprise a new position
+REM See if we have to use shield energy for maneuvering (3910)
 REM T8 is time we're going to advance the clock, default to 1
 
 3370 A$="<*>":Z1=INT(S1):Z2=INT(S2):GOSUB8670:GOSUB3910:T8=1
 
-REM If the warp factor is less than one, truncate T8 to a single decimal
-REM place.
+REM If the warp factor is less than one, set T8 to the warp factor and
+REM truncate to a single decimal place.
 
 3430 IFW1<1THENT8=.1*INT(10*W1)
 
